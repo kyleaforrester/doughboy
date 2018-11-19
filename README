@@ -1,0 +1,3 @@
+To compile doughboy:
+
+gcc doughboy.c
