@@ -26,6 +26,7 @@ void parse_setoption(char *buffer, size_t buf_size) {
 
     for (o_itr = options; *o_itr; o_itr++) {
         if (strcmp((*o_itr)->name, parsed_string[2]) == 0) {
+            //Act like a switch/case for the option name
             if (strcmp((*o_itr)->name, "Threads") == 0) {
                 (*o_itr)->spin = atoi(parsed_string[4]);
             }
@@ -47,6 +48,10 @@ void parse_isready(char *buffer, size_t buf_size) {
     printf("readyok\n");
 }
 
+void parse_position(char *buffer, size_t buf_size) {
+
+}
+
 void parse_printoptions(char *buffer, size_t buf_size) {
     struct Option **o_itr;
     for (o_itr = options; *o_itr; o_itr++) {
@@ -64,6 +69,29 @@ void parse_printoptions(char *buffer, size_t buf_size) {
     }
 }
 
+void parse_printboard(char *buffer, size_t buf_size) {
+    printf("Entering printboard\n");
+    char board[64];
+    int x, y;
+
+    //Each square will have = on top edge and | for side edge.
+    //Empty squares will be hyphens -
+    fill_char_board(board, sizeof(board));
+
+    //Print board
+    //Print first row
+    //Loop for each row starting from top
+    printf("\n=================\n");
+    for (y = 7; y >= 0; y--) {
+        //Loop for each column starting from left
+        printf("|"); 
+        for (x = 0; x < 8; x++) {
+            printf("%c|", board[8*y+x]);
+        }
+        printf("\n=================\n");
+    }
+}
+
 void initialize_options() {
     struct Option **o_itr;
     options = malloc(sizeof(struct Option *) * 3);
@@ -77,6 +105,32 @@ void initialize_options() {
     *o_itr = 0;
 }
 
+void initialize_board() {
+    curr_board = malloc(sizeof(struct Board));
+    //White
+    curr_board->bitboards[0] = 0xff00;
+    curr_board->bitboards[1] = 0x42;
+    curr_board->bitboards[2] = 0x24;
+    curr_board->bitboards[3] = 0x81;
+    curr_board->bitboards[4] = 0x8;
+    curr_board->bitboards[5] = 0x10;
+    //Black
+    curr_board->bitboards[6] = 0xff000000000000;
+    curr_board->bitboards[7] = 0x4200000000000000;
+    curr_board->bitboards[8] = 0x2400000000000000;
+    curr_board->bitboards[9] = 0x8100000000000000;
+    curr_board->bitboards[10] = 0x800000000000000;
+    curr_board->bitboards[11] = 0x1000000000000000;
+
+    curr_board->white_moves = 1;
+    curr_board->white_king_castle = 1;
+    curr_board->white_queen_castle = 1;
+    curr_board->black_king_castle = 1;
+    curr_board->black_queen_castle = 1;
+    curr_board->en_passent = 0;
+    curr_board->halfmove_clock = 0;
+}
+
 int main(int argc, char **argv) {
 
     printf("Doughboy %s 64 by Kyle Forrester\n", DOUGHBOY_VERSION);
@@ -87,6 +141,7 @@ int main(int argc, char **argv) {
     int debug = 0;
 
     initialize_options();
+    initialize_board();
 
     while (getline(&buffer, &buf_size, stdin) <= MAX_BUF_SIZE) {
         //Strip the newline char off buffer
@@ -108,8 +163,16 @@ int main(int argc, char **argv) {
             parse_isready(buffer, strlen(buffer));
         }
         else if (strcmp(first_word, "printoptions") == 0) {
-            LOG(debug, "Print detected!");
+            LOG(debug, "Printoptions detected!");
             parse_printoptions(buffer, strlen(buffer));
+        }
+        else if (strcmp(first_word, "printboard") == 0) {
+            LOG(debug, "Printboard detected!");
+            parse_printboard(buffer, strlen(buffer));
+        }
+        else if (strcmp(first_word, "position") == 0) {
+            LOG(debug, "Position detected!");
+            parse_position(buffer, strlen(buffer));
         }
         else {
             LOG(debug, "Received Unknown command.");

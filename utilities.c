@@ -38,3 +38,21 @@ void free_tokenize_input(char **input) {
     free(*input);
     free(input);
 }
+
+int lsb_index(uint64_t bb) {
+    int i;
+    bb &= ~bb + 1;
+    for (i = -1; bb; i++) {
+        bb = bb >> 1;
+    }
+    return i;
+}
+
+int bit_count(uint64_t bb) {
+    int i;
+    for (i = 0; bb; i++) {
+        bb &= bb - 1;
+    }
+    return i;
+}
+
