@@ -66,8 +66,9 @@ void parse_position(char *buffer, size_t buf_size) {
         return;
     }
 
-    //Example command:
+    //Example commands:
     //position startpos moves e2e4
+    //position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4
     if (strcmp(com_tokens[1], "startpos") == 0) {
         set_to_fen(curr_board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", "0", "1");
         if (word_count > 3 && strcmp(com_tokens[2], "moves") == 0) {
@@ -77,7 +78,7 @@ void parse_position(char *buffer, size_t buf_size) {
         }
     }
     else if (strcmp(com_tokens[1], "fen") == 0) {
-        if (word_count < 8 || char_count(com_tokens[2], strlen(com_tokens[2]), "/") != 7) {
+        if (word_count < 8 || char_count(com_tokens[2], strlen(com_tokens[2]), '/') != 7) {
             free_tokenize_input(com_tokens);
             return;
         }
