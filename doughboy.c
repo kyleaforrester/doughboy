@@ -32,6 +32,7 @@ struct Board {
     int black_queen_castle;
     uint64_t en_passent;
     int halfmove_clock;
+    int fullmove_clock;
 };
 struct Board *curr_board;
 

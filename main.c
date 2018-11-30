@@ -49,7 +49,47 @@ void parse_isready(char *buffer, size_t buf_size) {
 }
 
 void parse_position(char *buffer, size_t buf_size) {
+    int word_count, i;
+    char **com_tokens = m_tokenize_input(buffer, buf_size);
 
+    if (strcmp(com_tokens[0], "position") != 0) {
+        free_tokenize_input(com_tokens);
+        return;
+    }
+
+    //Need to check argument size for security purposes
+    //So people cannot so easily crash the program
+    for (word_count = 0; com_tokens[word_count]; word_count++);
+
+    if (word_count < 2) {
+        free_tokenize_input(com_tokens);
+        return;
+    }
+
+    //Example command:
+    //position startpos moves e2e4
+    if (strcmp(com_tokens[1], "startpos") == 0) {
+        set_to_fen(curr_board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", "0", "1");
+        if (word_count > 3 && strcmp(com_tokens[2], "moves") == 0) {
+            for (i = 3; i < word_count; i++) {
+                do_move(curr_board, com_tokens[i]);
+            }
+        }
+    }
+    else if (strcmp(com_tokens[1], "fen") == 0) {
+        if (word_count < 8 || char_count(com_tokens[2], strlen(com_tokens[2]), "/") != 7) {
+            free_tokenize_input(com_tokens);
+            return;
+        }
+        set_to_fen(curr_board, com_tokens[2], com_tokens[3], com_tokens[4], com_tokens[5], com_tokens[6], com_tokens[7]);
+        if (word_count > 9 && strcmp(com_tokens[8], "moves") == 0) {
+            for (i = 9; i < word_count; i++) {
+                do_move(curr_board, com_tokens[i]);
+            }
+        }
+    }
+
+    free_tokenize_input(com_tokens);
 }
 
 void parse_printoptions(char *buffer, size_t buf_size) {
@@ -70,7 +110,6 @@ void parse_printoptions(char *buffer, size_t buf_size) {
 }
 
 void parse_printboard(char *buffer, size_t buf_size) {
-    printf("Entering printboard\n");
     char board[64];
     int x, y;
 
@@ -129,6 +168,7 @@ void initialize_board() {
     curr_board->black_queen_castle = 1;
     curr_board->en_passent = 0;
     curr_board->halfmove_clock = 0;
+    curr_board->fullmove_clock = 1;
 }
 
 int main(int argc, char **argv) {
