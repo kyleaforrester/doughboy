@@ -1,12 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
+#include <assert.h>
 
 #define DOUGHBOY_VERSION "v0.1.0"
 #define LOG(x,y) if (x) printf(y)
 #define MAX_BUF_SIZE 4096
 #define NELEMS(x) (sizeof(x)/sizeof((x)[0]))
 
+#ifndef __uint32_t_defined
+typedef unsigned int            uint32_t;
+# define __uint32_t_defined
+#endif
 #if __WORDSIZE == 64
 typedef unsigned long int       uint64_t;
 #else
@@ -36,6 +42,17 @@ struct Board {
 };
 struct Board *curr_board;
 
+struct Node {
+    struct Board board;
+    int visits;
+    double value;
+    struct Node *children;
+    struct Node *parent;
+    pthread_mutex_t mutex;
+};
+struct Node *root;
+
 #include "utilities.c"
 #include "board.c"
+#include "search.c"
 #include "main.c"

@@ -48,6 +48,20 @@ void parse_isready(char *buffer, size_t buf_size) {
     printf("readyok\n");
 }
 
+void parse_go(char *buffer, size_t buf_size) {
+
+    if (!root) {
+        root = malloc(sizeof(struct Node));
+        root->board = *curr_board;
+        root->visits = 0;
+        root->value = 0.5;
+        root->parent = NULL;
+        root->children = NULL;
+    }
+
+    m_populate_game_tree();
+}
+
 void parse_position(char *buffer, size_t buf_size) {
     int word_count, i;
     char **com_tokens = m_tokenize_input(buffer, buf_size);
@@ -214,6 +228,10 @@ int main(int argc, char **argv) {
         else if (strcmp(first_word, "position") == 0) {
             LOG(debug, "Position detected!");
             parse_position(buffer, strlen(buffer));
+        }
+        else if (strcmp(first_word, "go") == 0) {
+            LOG(debug, "Go detected!");
+            parse_go(buffer, strlen(buffer));
         }
         else {
             LOG(debug, "Received Unknown command.");

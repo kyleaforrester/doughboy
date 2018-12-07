@@ -56,3 +56,16 @@ int bit_count(uint64_t bb) {
     return i;
 }
 
+//PRNG Algorithm
+//Credit:
+//https://nullprogram.com/blog/2017/09/21/
+uint32_t
+spcg32(uint64_t s[1])
+{
+    uint64_t m = 0x9b60933458e17d7d;
+    uint64_t a = 0xd737232eeccdf7ed;
+    *s = *s * m + a;
+    int shift = 29 - (*s >> 61);
+    return *s >> shift;
+}
+
