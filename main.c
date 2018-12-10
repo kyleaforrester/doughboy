@@ -49,6 +49,10 @@ void parse_isready(char *buffer, size_t buf_size) {
 }
 
 void parse_go(char *buffer, size_t buf_size) {
+    int word_count, i;
+    char **com_tokens = m_tokenize_input(buffer, buf_size);
+    char *com_token_itr;
+    int ponder, wtime, btime, winc, binc, movestogo, depth, nodes, movetime, infinite;
 
     if (!root) {
         root = malloc(sizeof(struct Node));
@@ -59,7 +63,57 @@ void parse_go(char *buffer, size_t buf_size) {
         root->children = NULL;
     }
 
-    m_populate_game_tree();
+    if (strcmp(com_tokens[0], "go") != 0) {
+        free_tokenize_input(com_tokens);
+        return;
+    }
+
+    for (com_token_itr = (*com_tokens+1); com_token_itr; com_token_itr++) {
+        if (strcmp(com_token_itr, "ponder") == 0) {
+            ponder = 1;
+        }
+        else if (strcmp(com_token_itr, "wtime") == 0) {
+            wtime = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "btime") == 0) {
+            btime = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "winc") == 0) {
+            winc = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "binc") == 0) {
+            binc = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "movestogo") == 0) {
+            movestogo = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "depth") == 0) {
+            depth = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "nodes") == 0) {
+            nodes = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "movetime") == 0) {
+            movetime = atoi(com_token_itr + 1);
+            com_token_itr++;
+        }
+        else if (strcmp(com_token_itr, "infinite") == 0) {
+            infinite = 1;
+        }
+    }
+
+    spawn_go_manager(ponder, wtime, btime, winc, binc, movestogo, depth, nodes, movetime, infinite);
+}
+
+void parse_stop(char *buffer, size_t buf_size) {
+    stop_pondering = 1;
 }
 
 void parse_position(char *buffer, size_t buf_size) {
@@ -197,6 +251,7 @@ int main(int argc, char **argv) {
 
     initialize_options();
     initialize_board();
+    stop_pondering = 0;
 
     while (getline(&buffer, &buf_size, stdin) <= MAX_BUF_SIZE) {
         //Strip the newline char off buffer
@@ -232,6 +287,10 @@ int main(int argc, char **argv) {
         else if (strcmp(first_word, "go") == 0) {
             LOG(debug, "Go detected!");
             parse_go(buffer, strlen(buffer));
+        }
+        else if (strcmp(first_word, "stop") == 0) {
+            LOG(debug, "Stop detected!");
+            parse_stop(buffer, strlen(buffer));
         }
         else {
             LOG(debug, "Received Unknown command.");

@@ -45,12 +45,16 @@ struct Board *curr_board;
 struct Node {
     struct Board board;
     int visits;
-    double value;
-    struct Node *children;
+    int depth;
+    int cp;
+    struct Node **children;
     struct Node *parent;
+    char last_move[6];
     pthread_mutex_t mutex;
 };
 struct Node *root;
+
+int stop_pondering;
 
 #include "utilities.c"
 #include "board.c"
