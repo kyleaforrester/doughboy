@@ -103,6 +103,53 @@ def rook_collisions():
         square_list.append(index_to_hex(index_list))
     return square_list
 
+def king_collisions():
+    square_list = []
+    for i in range(64):
+        index_list = []
+        #North
+        if (math.floor((i+8)/8) <= 7):
+            index_list.append(i+8)
+        #Northeast
+        if (math.floor((i+9)/8) <= 7 and i%8 < (i+9)%8):
+            index_list.append(i+9)
+        #East
+        if (i%8 < (i+1)%8):
+            index_list.append(i+1)
+        #Southeast
+        if (math.floor((i-7)/8) >= 0 and i%8 < (i-7)%8):
+            index_list.append(i+1)
+        #South
+        if (math.floor((i-8)/8) >= 0):
+            index_list.append(i-8)
+        #Southwest
+        if (math.floor((i-9)/8) >= 0 and i%8 > (i-9)%8):
+            index_list.append(i-9)
+        #West
+        if (i%8 > (i-1)%8):
+            index_list.append(i-1)
+        #Northwest
+        if (math.floor((i+7)/8) <= 7 and i%8 > (i+7)%8):
+            index_list.append(i+7)
+        square_list.append(index_to_hex(index_list))
+    return square_list
+
+def w_pawn_move_collisions():
+    square_list = []
+    for i in range(64):
+        index_list = []
+        if (i >= 8 and i <= 15):
+            index_list.append(i+8)
+            index_list.append(i+16)
+        else:
+            index_list
+
+def w_pawn_attack_collisions():
+
+def b_pawn_move_collisions():
+
+def b_pawn_attack_collisions():
+
 def print_array(array):
     for a in array:
         print(a)
