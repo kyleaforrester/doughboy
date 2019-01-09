@@ -2,106 +2,132 @@
 
 import sys
 import math
+import itertools
+import random
 
 def index_to_hex(index_list):
+    if (len(index_list) == 0):
+        return hex(0)
     args = [2**int(i) for i in index_list]
     return hex(sum(args))
+
+def integer_index_list(index_list):
+    if (len(index_list) == 0):
+        return 0
+    args = [2**int(i) for i in index_list]
+    return sum(args)
 
 def knight_collisions():
     square_list = []
     for i in range(64):
-        index_list = []
-        #(1,2)
-        if ((i+17) <= 63 and ((i+17)%8) - (i%8) == 1):
-            index_list.append(i+17)
-        #(2,1)
-        if ((i+10) <= 63 and ((i+10)%8) - (i%8) == 2):
-            index_list.append(i+10)
-        #(2,-1)
-        if ((i-6) >= 0 and ((i-6)%8) - (i%8) == 2):
-            index_list.append(i-6)
-        #(1,-2)
-        if ((i-15) >= 0 and ((i-15)%8) - (i%8) == 1):
-            index_list.append(i-15)
-        #(-1,-2)
-        if ((i-17) >= 0 and (i%8) - ((i-17)%8) == 1):
-            index_list.append(i-17)
-        #(-2,-1)
-        if ((i-10) >= 0 and (i%8) - ((i-10)%8) == 2):
-            index_list.append(i-10)
-        #(-2,1)
-        if ((i+6) <= 63 and (i%8) - ((i+6)%8) == 2):
-            index_list.append(i+6)
-        #(-1,2)
-        if ((i+15) <= 63 and (i%8) - ((i+15)%8) == 1):
-            index_list.append(i+15)
-        square_list.append(index_to_hex(index_list))
+        square_list.append(index_to_hex(knight_moves(i)))
     return square_list
+
+def knight_moves(i):
+    #i is the index our knight occupies
+    #index_list will contain all indexes of valid move_spaces
+    index_list = []
+
+    #(1,2)
+    if ((i+17) <= 63 and ((i+17)%8) - (i%8) == 1):
+        index_list.append(i+17)
+    #(2,1)
+    if ((i+10) <= 63 and ((i+10)%8) - (i%8) == 2):
+        index_list.append(i+10)
+    #(2,-1)
+    if ((i-6) >= 0 and ((i-6)%8) - (i%8) == 2):
+        index_list.append(i-6)
+    #(1,-2)
+    if ((i-15) >= 0 and ((i-15)%8) - (i%8) == 1):
+        index_list.append(i-15)
+    #(-1,-2)
+    if ((i-17) >= 0 and (i%8) - ((i-17)%8) == 1):
+        index_list.append(i-17)
+    #(-2,-1)
+    if ((i-10) >= 0 and (i%8) - ((i-10)%8) == 2):
+        index_list.append(i-10)
+    #(-2,1)
+    if ((i+6) <= 63 and (i%8) - ((i+6)%8) == 2):
+        index_list.append(i+6)
+    #(-1,2)
+    if ((i+15) <= 63 and (i%8) - ((i+15)%8) == 1):
+        index_list.append(i+15)
+    return index_list
 
 def bishop_collisions():
     square_list = []
     for i in range(64):
-        index_list = []
-        #Northeast
-        x = 1
-        y = 8
-        while ((i+x)%8 > i%8 and math.floor((i+y)/8) <= 7):
-            index_list.append(i+x+y)
-            x += 1
-            y += 8
-
-        #Southeast
-        x = 1
-        y = -8
-        while ((i+x)%8 > i%8 and math.floor((i+y)/8) >= 0):
-            index_list.append(i+x+y)
-            x += 1
-            y -= 8
-
-        #Southwest
-        x = -1
-        y = -8
-        while ((i+x)%8 < i%8 and math.floor((i+y)/8) >= 0):
-            index_list.append(i+x+y)
-            x -= 1
-            y -= 8
-
-        #Northwest
-        x = -1
-        y = 8
-        while ((i+x)%8 < i%8 and math.floor((i+y)/8) <= 7):
-            index_list.append(i+x+y)
-            x -= 1
-            y += 8
-        square_list.append(index_to_hex(index_list))
+        square_list.append(index_to_hex(bishop_moves(i)))
     return square_list
+
+def bishop_moves(i):
+    #i is the index our bishop occupies
+    #index_list will contain all indexes of valid move_spaces
+    index_list = []
+    #Northeast
+    x = 1
+    y = 8
+    while ((i+x)%8 > i%8 and (i+x)%8 <= 6 and math.floor((i+y)/8) <= 6):
+        index_list.append(i+x+y)
+        x += 1
+        y += 8
+
+    #Southeast
+    x = 1
+    y = -8
+    while ((i+x)%8 > i%8 and (i+x)%8 <= 6 and math.floor((i+y)/8) >= 1):
+        index_list.append(i+x+y)
+        x += 1
+        y -= 8
+
+    #Southwest
+    x = -1
+    y = -8
+    while ((i+x)%8 < i%8 and (i+x)%8 >= 1 and math.floor((i+y)/8) >= 1):
+        index_list.append(i+x+y)
+        x -= 1
+        y -= 8
+
+    #Northwest
+    x = -1
+    y = 8
+    while ((i+x)%8 < i%8 and (i+x)%8 >= 1 and math.floor((i+y)/8) <= 6):
+        index_list.append(i+x+y)
+        x -= 1
+        y += 8
+    return index_list
 
 def rook_collisions():
     square_list = []
     for i in range(64):
-        index_list = []
-        #North
-        y = 8
-        while (math.floor((i+y)/8) <= 7):
-            index_list.append(i+y)
-            y += 8
-        #South
-        y = -8
-        while (math.floor((i+y)/8) >= 0):
-            index_list.append(i+y)
-            y -= 8
-        #East
-        x = 1
-        while (((i+x)%8) > i%8):
-            index_list.append(i+x)
-            x += 1
-        #West
-        x = -1
-        while (((i+x)%8) < i%8):
-            index_list.append(i+x)
-            x -= 1
-        square_list.append(index_to_hex(index_list))
+        square_list.append(index_to_hex(rook_moves(i)))
     return square_list
+
+def rook_moves(i):
+    #i is the index our rook occupies
+    #index_list will contain all indexes of valid move_spaces
+    index_list = []
+    #North
+    y = 8
+    while (math.floor((i+y)/8) <= 6):
+        index_list.append(i+y)
+        y += 8
+    #South
+    y = -8
+    while (math.floor((i+y)/8) >= 1):
+        index_list.append(i+y)
+        y -= 8
+    #East
+    x = 1
+    while (((i+x)%8) > i%8 and ((i+x)%8) <= 6):
+        index_list.append(i+x)
+        x += 1
+    #West
+    x = -1
+    while (((i+x)%8) < i%8 and ((i+x)%8) >= 1):
+        index_list.append(i+x)
+        x -= 1
+    return index_list
 
 def king_collisions():
     square_list = []
@@ -141,15 +167,130 @@ def w_pawn_move_collisions():
         if (i >= 8 and i <= 15):
             index_list.append(i+8)
             index_list.append(i+16)
-        else:
-            index_list
+        elif (i >= 16 and i <= 55):
+            index_list.append(i+8)
+        square_list.append(index_to_hex(index_list))
+    return square_list
 
 def w_pawn_attack_collisions():
+    square_list = []
+    for i in range(64):
+        index_list = []
+        #Northeast
+        if (i%8 < (i+9)%8 and math.floor((i+9)/8) <= 7):
+            index_list.append(i + 9)
+        #Northwest
+        if (i%8 > (i+7)%8 and math.floor((i+7)/8) <= 7):
+            index_list.append(i + 7)
+        square_list.append(index_to_hex(index_list))
+    return square_list
 
 def b_pawn_move_collisions():
+    square_list = []
+    for i in range(64):
+        index_list = []
+        if (i >= 48 and i <= 55):
+            index_list.append(i-8)
+            index_list.append(i-16)
+        elif (i <= 47 and i >= 8):
+            index_list.append(i-8)
+        square_list.append(index_to_hex(index_list))
+    return square_list
 
 def b_pawn_attack_collisions():
+    square_list = []
+    for i in range(64):
+        index_list = []
+        #Southeast
+        if (i%8 < (i-7)%8 and math.floor((i-7)/8) >= 0):
+            index_list.append(i - 7)
+        #Southwest
+        if (i%8 > (i-9)%8 and math.floor((i-9)/8) >= 0):
+            index_list.append(i - 9)
+        square_list.append(index_to_hex(index_list))
+    return square_list
 
 def print_array(array):
     for a in array:
         print(a)
+
+def rook_occupation_moves(i, occupations):
+    index_list = []
+    #North
+    y = 8
+    while (math.floor((i+y)/8) <= 7):
+        index_list.append(i+y)
+        if ((i+y) in occupations):
+            break
+        y += 8
+    #South
+    y = -8
+    while (math.floor((i+y)/8) >= 0):
+        index_list.append(i+y)
+        if ((i+y) in occupations):
+            break
+        y -= 8
+    #East
+    x = 1
+    while (((i+x)%8) > i%8 and ((i+x)%8) <= 7):
+        index_list.append(i+x)
+        if ((i+x) in occupations):
+            break
+        x += 1
+    #West
+    x = -1
+    while (((i+x)%8) < i%8 and ((i+x)%8) >= 0):
+        index_list.append(i+x)
+        if ((i+x) in occupations):
+            break
+        x -= 1
+    return index_list
+
+
+def rook_magic_numbers():
+    bits = 0xffffffffffffffff
+    magic_nums = []
+    for i in range(64):
+        collisions = rook_moves(i)
+        occupied_move_map = {}
+        occupied_move_map[0] = integer_index_list(rook_occupation_moves(i, []))
+        occupied_sets = []
+        for j in range(1, len(collisions)+1):
+            combos = list(itertools.combinations(collisions, j))
+            for combo in combos:
+                occupied_sets.append(combo)
+        #Set the correct answers for each occupied_set
+        for occupied_set in occupied_sets:
+            occupied_move_map[integer_index_list(occupied_set)] = integer_index_list(rook_occupation_moves(i, occupied_set))
+        
+        hash_bit_size = 11
+        attempts = 0
+        perfect_hash = False
+        new_rand = 100
+        new_array = []
+        while (not perfect_hash):
+            new_rand = random.randint(1, bits) & random.randint(1, bits)
+            attempts += 1
+            new_array = [0]*(2**hash_bit_size)
+            perfect_hash = True
+            item_count = 0
+            for item in occupied_move_map.items():
+                item_count += 1
+                index = ((item[0] * new_rand) & bits) >> (64-hash_bit_size)
+                if (new_array[index] == 0 or new_array[index] == item[1]):
+                    new_array[index] = item[1]
+                else:
+                    perfect_hash = False
+                    if (attempts % 1000 == 0):
+                        #print('Attempt {} failed on the {} item.'.format(attempts, item_count))
+                        pass
+                    break
+        print('Found magic number for square {}: {}'.format(i, new_rand))
+        print('{ ', end='')
+        for index in range(len(new_array)):
+            print('{}'.format(hex(new_array[index])), end='')
+            if (index < len(new_array)-1):
+                print(',', end='')
+        print(' }')
+
+    return magic_nums
