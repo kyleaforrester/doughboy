@@ -20,7 +20,7 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
     int i;
     struct Node *node_itr = r_node, *child_itr;
     struct Node *min_child, *max_child;
-    int is_user_white = r_node->white_moves;
+    int is_user_white = r_node->board.white_moves;
 
     //The tree should be populated correctly depending on the user's move
     while (*(node_itr->children)) {
@@ -39,7 +39,7 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
 
         //It is my move!
         //Get the Max child node
-        if ((is_user_white && node_itr->white_moves) || (!is_user_white && !node_itr->white_moves)) {
+        if ((is_user_white && node_itr->board.white_moves) || (!is_user_white && !node_itr->board.white_moves)) {
             strcat(buffer, " ");
             strcat(buffer, max_child->last_move);
             node_itr = max_child;
@@ -82,7 +82,7 @@ void *go_worker(void *argument) {
         //Keep 1 second in the bank at all times
         //I don't care about opponent's time management situation
         //I am white
-        if (root->white_moves) {
+        if (root->board.white_moves) {
             search_time_nanos = (((args.wtime - 1000)/args.movestogo) + args.winc)*1000000L;
         }
         //I am black
@@ -118,7 +118,7 @@ void *go_worker(void *argument) {
             if (root->depth > curr_depth) {
                 curr_depth = root->depth;
                 get_pv(root, pv, sizeof(pv));
-                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", depth, depth, 1, root->cp, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
+                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, root->cp, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
             }
 
             /*
@@ -127,7 +127,7 @@ void *go_worker(void *argument) {
             2) Depth is exhausted
             3) Nodes is exhausted
             */
-            if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos) || root->depth >= args.depth || root->nodes >= args.nodes)) {
+            if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos) || root->depth >= args.depth || root->visits >= args.nodes)) {
                 //Stop all searching
                 stop_pondering = 1;
             }
@@ -201,7 +201,6 @@ void spawn_go_workers(int ponder, int wtime, int btime, int winc, int binc, int 
 
     //Spawn the worker threads
     for (i = 0; i < thread_count; i++) {
-        thread_args[i] = i;
         result_code = pthread_create(&threads[i], NULL, go_worker, &thread_args[i]);
         assert(!result_code);
 

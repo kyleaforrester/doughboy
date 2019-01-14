@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <assert.h>
+#include <time.h>
 
 #define DOUGHBOY_VERSION "v0.1.0"
 #define LOG(x,y) if (x) printf(y)

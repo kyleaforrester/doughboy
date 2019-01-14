@@ -74,6 +74,6 @@ spcg32(uint64_t s[1])
 //https://stackoverflow.com/questions/361363/how-to-measure-time-in-milliseconds-using-ansi-c/36095407#36095407
 uint64_t get_nanos() {
     struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
+    clock_gettime(CLOCK_REALTIME, &ts);
     return (uint64_t)ts.tv_sec * 1000000000L + ts.tv_nsec;
 }

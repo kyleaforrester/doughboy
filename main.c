@@ -58,7 +58,7 @@ void parse_go(char *buffer, size_t buf_size) {
         root = malloc(sizeof(struct Node));
         root->board = *curr_board;
         root->visits = 0;
-        root->value = 0.5;
+        root->cp = 0;
         root->parent = NULL;
         root->children = NULL;
     }
@@ -109,7 +109,7 @@ void parse_go(char *buffer, size_t buf_size) {
         }
     }
 
-    spawn_go_manager(ponder, wtime, btime, winc, binc, movestogo, depth, nodes, movetime, infinite);
+    spawn_go_workers(ponder, wtime, btime, winc, binc, movestogo, depth, nodes, movetime, infinite);
 }
 
 void parse_stop(char *buffer, size_t buf_size) {
