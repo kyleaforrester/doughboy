@@ -304,3 +304,13 @@ def print_rook_magic_numbers():
 
     for move in placed_moves_strings:
         print(move)
+
+def print_bitboard(integer):
+    for y in range(7, -1, -1):
+        for x in range(8):
+            index = 8*y + x
+            if (integer & (2**index)):
+                print('1', end='')
+            else:
+                print('0', end='')
+        print('')
