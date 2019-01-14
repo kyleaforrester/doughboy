@@ -246,6 +246,51 @@ def rook_occupation_moves(i, occupations):
         x -= 1
     return index_list
 
+def bishop_occupation_moves(i, occupations):
+    #i is the index our bishop occupies
+    #index_list will contain all indexes of valid move_spaces
+    index_list = []
+    #Northeast
+    x = 1
+    y = 8
+    while ((i+x)%8 > i%8 and (i+x)%8 <= 7 and math.floor((i+y)/8) <= 7):
+        index_list.append(i+x+y)
+        if ((i+x+y) in occupations):
+            break
+        x += 1
+        y += 8
+
+    #Southeast
+    x = 1
+    y = -8
+    while ((i+x)%8 > i%8 and (i+x)%8 <= 7 and math.floor((i+y)/8) >= 0):
+        index_list.append(i+x+y)
+        if ((i+x+y) in occupations):
+            break
+        x += 1
+        y -= 8
+
+    #Southwest
+    x = -1
+    y = -8
+    while ((i+x)%8 < i%8 and (i+x)%8 >= 0 and math.floor((i+y)/8) >= 0):
+        index_list.append(i+x+y)
+        if ((i+x+y) in occupations):
+            break
+        x -= 1
+        y -= 8
+
+    #Northwest
+    x = -1
+    y = 8
+    while ((i+x)%8 < i%8 and (i+x)%8 >= 0 and math.floor((i+y)/8) <= 7):
+        index_list.append(i+x+y)
+        if ((i+x+y) in occupations):
+            break
+        x -= 1
+        y += 8
+    return index_list
+
 
 def rook_magic_numbers():
     bits = 0xffffffffffffffff
@@ -291,9 +336,67 @@ def rook_magic_numbers():
 
     return magic_nums, placed_moves
 
+def bishop_magic_numbers():
+    bits = 0xffffffffffffffff
+    magic_nums = []
+    placed_moves = []
+    for i in range(64):
+        collisions = bishop_moves(i)
+        occupied_move_map = {}
+        occupied_move_map[0] = integer_index_list(bishop_occupation_moves(i, []))
+        occupied_sets = []
+        for j in range(1, len(collisions)+1):
+            combos = list(itertools.combinations(collisions, j))
+            for combo in combos:
+                occupied_sets.append(combo)
+        #Set the correct answers for each occupied_set
+        for occupied_set in occupied_sets:
+            occupied_move_map[integer_index_list(occupied_set)] = integer_index_list(bishop_occupation_moves(i, occupied_set))
+        
+        hash_bit_size = 9 
+        attempts = 0
+        perfect_hash = False
+        new_rand = 100
+        new_array = []
+        while (not perfect_hash):
+            new_rand = random.randint(1, bits) & random.randint(1, bits)
+            attempts += 1
+            new_array = [0]*(2**hash_bit_size)
+            perfect_hash = True
+            item_count = 0
+            for item in occupied_move_map.items():
+                item_count += 1
+                index = ((item[0] * new_rand) & bits) >> (64-hash_bit_size)
+                if (new_array[index] == 0 or new_array[index] == item[1]):
+                    new_array[index] = item[1]
+                else:
+                    perfect_hash = False
+                    if (attempts % 1000 == 0):
+                        #print('Attempt {} failed on the {} item.'.format(attempts, item_count))
+                        pass
+                    break
+        magic_nums.append(new_rand)
+        placed_moves.append(new_array)
+
+    return magic_nums, placed_moves
+
 def print_rook_magic_numbers():
     
     magic_nums, placed_moves = rook_magic_numbers()
+
+    magic_num_string = ','.join([str(num) for num in magic_nums])
+
+    print(magic_num_string)
+    print('')
+
+    placed_moves_strings = ['{ ' + ','.join([hex(move) for move in moves]) + ' }' for moves in placed_moves]
+
+    for move in placed_moves_strings:
+        print(move)
+
+def print_bishop_magic_numbers():
+    
+    magic_nums, placed_moves = bishop_magic_numbers()
 
     magic_num_string = ','.join([str(num) for num in magic_nums])
 
