@@ -250,6 +250,7 @@ def rook_occupation_moves(i, occupations):
 def rook_magic_numbers():
     bits = 0xffffffffffffffff
     magic_nums = []
+    placed_moves = []
     for i in range(64):
         collisions = rook_moves(i)
         occupied_move_map = {}
@@ -263,7 +264,7 @@ def rook_magic_numbers():
         for occupied_set in occupied_sets:
             occupied_move_map[integer_index_list(occupied_set)] = integer_index_list(rook_occupation_moves(i, occupied_set))
         
-        hash_bit_size = 11
+        hash_bit_size = 12
         attempts = 0
         perfect_hash = False
         new_rand = 100
@@ -285,12 +286,21 @@ def rook_magic_numbers():
                         #print('Attempt {} failed on the {} item.'.format(attempts, item_count))
                         pass
                     break
-        print('Found magic number for square {}: {}'.format(i, new_rand))
-        print('{ ', end='')
-        for index in range(len(new_array)):
-            print('{}'.format(hex(new_array[index])), end='')
-            if (index < len(new_array)-1):
-                print(',', end='')
-        print(' }')
+        magic_nums.append(new_rand)
+        placed_moves.append(new_array)
 
-    return magic_nums
+    return magic_nums, placed_moves
+
+def print_rook_magic_numbers():
+    
+    magic_nums, placed_moves = rook_magic_numbers()
+
+    magic_num_string = ','.join([str(num) for num in magic_nums])
+
+    print(magic_num_string)
+    print('')
+
+    placed_moves_strings = ['{ ' + ','.join([hex(move) for move in moves]) + ' }' for moves in placed_moves]
+
+    for move in placed_moves_strings:
+        print(move)
