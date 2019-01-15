@@ -317,7 +317,7 @@ void fill_char_board_bb(char *board, size_t board_size, uint64_t bb, char piece)
     }
 
     for (i = 0; temp_bb && i < num_bits; i++) {
-        board[lsb_index(temp_bb)] = piece;
+        board[LSB(temp_bb)] = piece;
         //Remove the LSB
         temp_bb &= temp_bb - 1;
     }

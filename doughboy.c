@@ -9,6 +9,7 @@
 #define LOG(x,y) if (x) printf(y)
 #define MAX_BUF_SIZE 4096
 #define NELEMS(x) (sizeof(x)/sizeof((x)[0]))
+#define LSB(v)    __builtin_ctzll(v)
 
 #ifndef __uint32_t_defined
 typedef unsigned int            uint32_t;
