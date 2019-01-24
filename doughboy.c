@@ -10,6 +10,7 @@
 #define MAX_BUF_SIZE 4096
 #define NELEMS(x) (sizeof(x)/sizeof((x)[0]))
 #define LSB(v)    __builtin_ctzll(v)
+#define MAX_CHILDREN 200
 
 #ifndef __uint32_t_defined
 typedef unsigned int            uint32_t;
@@ -48,7 +49,7 @@ struct Node {
     struct Board board;
     int visits;
     int depth;
-    int cp;
+    double eval;
     struct Node **children;
     struct Node *parent;
     char last_move[6];

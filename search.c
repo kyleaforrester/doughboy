@@ -29,10 +29,10 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
         min_child = *(node_itr->children);
         max_child = min_child;
         for (child_itr = *(node_itr->children); child_itr; child_itr++) {
-            if (child_itr->cp > max_child->cp) {
+            if (child_itr->eval > max_child->eval) {
                 max_child = child_itr;
             }
-            if (child_itr->cp < min_child->cp) {
+            if (child_itr->eval < min_child->eval) {
                 min_child = child_itr;
             }
         }
@@ -65,7 +65,7 @@ void *go_worker(void *argument) {
     uint64_t search_time_nanos;
     //Seed with random number, diff for each thread
     uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084d);
-    int curr_depth = 0;
+    int curr_depth = 0, eval_display;
     char pv[MAX_BUF_SIZE];
     char **tokens;
 
@@ -118,7 +118,17 @@ void *go_worker(void *argument) {
             if (root->depth > curr_depth) {
                 curr_depth = root->depth;
                 get_pv(root, pv, sizeof(pv));
-                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, root->cp, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
+                //Display integer version of eval
+                if (root->eval > 0) {
+                    eval_display = (int) (root->eval + 0.5);
+                }
+                else if (root->eval < 0) {
+                    eval_display = (int) (root->eval - 0.5);
+                }
+                else {
+                    eval_display = 0;
+                }
+                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
             }
 
             /*

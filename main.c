@@ -58,9 +58,10 @@ void parse_go(char *buffer, size_t buf_size) {
         root = malloc(sizeof(struct Node));
         root->board = *curr_board;
         root->visits = 0;
-        root->cp = 0;
+        root->eval = 0;
         root->parent = NULL;
         root->children = NULL;
+        pthread_mutex_init(&(root->mutex), NULL);
     }
 
     if (strcmp(com_tokens[0], "go") != 0) {
