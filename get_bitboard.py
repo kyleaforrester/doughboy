@@ -417,3 +417,12 @@ def print_bitboard(integer):
             else:
                 print('0', end='')
         print('')
+
+def print_square_lookup_table():
+    for col in 'abcdefgh':
+        for i in range(8):
+            print(col, end=',')
+    print()
+    for i in range(8):
+        for row in '12345678':
+            print(row, end=',')
