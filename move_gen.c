@@ -18,7 +18,6 @@ int m_bloom_node(struct Node *node) {
 
         ally_pieces = board->bitboards[0] | knights | bishops | rooks | queens | king;
         enemy_pieces = board->bitboards[6] | board->bitboards[7] | board->bitboards[8] | board->bitboards[9] | board->bitboards[10] | board->bitboards[11];
-        all_pieces = ally_pieces | enemy_pieces;
     }
     else {
         knights = board->bitboards[7];
@@ -29,12 +28,102 @@ int m_bloom_node(struct Node *node) {
 
         ally_pieces = board->bitboards[6] | knights | bishops | rooks | queens | king;
         enemy_pieces = board->bitboards[0] | board->bitboards[1] | board->bitboards[2] | board->bitboards[3] | board->bitboards[4] | board->bitboards[5];
-        all_pieces = ally_pieces | enemy_pieces;
     }
 
     children_count += m_add_knight_moves(knights, ally_pieces, enemy_pieces, node, children_count);
     children_count += m_add_bishop_moves(bishops, ally_pieces, enemy_pieces, node, children_count);
+    children_count += m_add_rook_moves(rooks, ally_pieces, enemy_pieces, node, children_count);
 
+}
+
+int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+
+    struct Node *child;
+    uint64_t lsb_rook, lsb_moves, moves;
+    int created_children = 0, captures, old_index, new_index;
+
+    //Loop for each rook
+    while (rooks) {
+        lsb_rook = rooks & (~rooks + 1);
+        moves = solo_rook_moves(lsb_rook, allies, allies | enemies);
+
+        //Loop for each move
+        while (moves && (created_children + children_count < MAX_CHILDREN - 1)) {
+            lsb_moves = moves & (~moves + 1);
+
+            //Create new Node
+            child = m_spawn_child(node);
+
+            //If White
+            if (node->board.white_moves) {
+                //Clear origin square
+                child->board.bitboards[3] &= ~lsb_rook;
+
+                //Clear destination square
+                captures = clear_destination_square(&(child->board), lsb_moves);
+
+                //Add destination square
+                child->board.bitboards[3] |= lsb_moves;
+
+                //Change move order
+                child->board.white_moves = 0;
+            }
+            //If Black
+            else {
+                //Clear origin square
+                child->board.bitboards[9] &= ~lsb_rook;
+
+                //Clear destination square
+                captures = clear_destination_square(&(child->board), lsb_moves);
+
+                //Add destination square
+                child->board.bitboards[9] |= lsb_moves;
+
+                //Change move order
+                child->board.white_moves = 1;
+            }
+
+            //Common color board updates
+            //Clear enpassent
+            child->board.en_passent = 0;
+
+            //Increment clocks
+            if (captures) {
+                child->board.halfmove_clock = 0;
+            }
+            else {
+                child->board.halfmove_clock += 1;
+            }
+            child->board.fullmove_clock += 1;
+
+            //Evaluate position
+            child->eval = evaluate(child->board);
+
+            //Set child's last_move
+            old_index = get_index(lsb_rook);
+            new_index = get_index(lsb_moves);
+            child->last_move[0] = col_lookup_table[old_index];
+            child->last_move[1] = row_lookup_table[old_index];
+            child->last_move[2] = col_lookup_table[new_index];
+            child->last_move[3] = row_lookup_table[new_index];
+            child->last_move[4] = NULL;
+
+            //Add new child to the parent
+            node->children[children_count + created_children] = child;
+            created_children += 1;
+
+            //Remove LSB from moves
+            moves &= moves - 1;
+        }
+
+        //Remove LSB from rooks
+        rooks &= rooks - 1;
+    }
+
+    //Set the last child to NULL
+    node->children[children_count + created_children] = NULL;
+
+    return created_children;
 }
 
 int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
