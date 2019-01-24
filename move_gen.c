@@ -100,8 +100,8 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
             child->eval = evaluate(child->board);
 
             //Set child's last_move
-            old_index = get_index(lsb_rook);
-            new_index = get_index(lsb_moves);
+            old_index = LSB(lsb_rook);
+            new_index = LSB(lsb_moves);
             child->last_move[0] = col_lookup_table[old_index];
             child->last_move[1] = row_lookup_table[old_index];
             child->last_move[2] = col_lookup_table[new_index];
@@ -190,8 +190,8 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
             child->eval = evaluate(child->board);
 
             //Set child's last_move
-            old_index = get_index(lsb_bishop);
-            new_index = get_index(lsb_moves);
+            old_index = LSB(lsb_bishop);
+            new_index = LSB(lsb_moves);
             child->last_move[0] = col_lookup_table[old_index];
             child->last_move[1] = row_lookup_table[old_index];
             child->last_move[2] = col_lookup_table[new_index];
@@ -280,8 +280,8 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
             child->eval = evaluate(child->board);
 
             //Set child's last_move
-            old_index = get_index(lsb_knight);
-            new_index = get_index(lsb_moves);
+            old_index = LSB(lsb_knight);
+            new_index = LSB(lsb_moves);
             child->last_move[0] = col_lookup_table[old_index];
             child->last_move[1] = row_lookup_table[old_index];
             child->last_move[2] = col_lookup_table[new_index];

@@ -68,11 +68,3 @@ uint64_t get_nanos() {
     clock_gettime(CLOCK_REALTIME, &ts);
     return (uint64_t)ts.tv_sec * 1000000000L + ts.tv_nsec;
 }
-
-int get_index(uint64_t bb) {
-    int i;
-    for (i = 0; bb; i++) {
-        bb >> 1;
-    }
-    return i-1;
-}
