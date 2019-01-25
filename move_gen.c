@@ -34,13 +34,227 @@ int m_bloom_node(struct Node *node) {
     children_count += m_add_bishop_moves(bishops, ally_pieces, enemy_pieces, node, children_count);
     children_count += m_add_rook_moves(rooks, ally_pieces, enemy_pieces, node, children_count);
     children_count += m_add_queen_moves(queens, ally_pieces, enemy_pieces, node, children_count);
+    children_count += m_add_king_moves(king, ally_pieces, enemy_pieces, node, children_count);
 
+}
+
+int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+
+    struct Node *child;
+    uint64_t lsb_moves, moves, king_location, castle_occupations;
+    int created_children = 0, captures, old_index, new_index, i;
+
+    moves = solo_king_moves(king, allies);
+
+    //Loop for each move
+    for (; moves && (created_children + children_count < MAX_CHILDREN - 1); moves &= moves - 1) {
+        lsb_moves = moves & (~moves + 1);
+
+        //Create new Node
+        child = m_spawn_child(node);
+
+        //If White
+        if (node->board.white_moves) {
+            //Clear origin square
+            child->board.bitboards[5] &= ~king;
+
+            //Clear destination square
+            captures = clear_destination_square(&(child->board), lsb_moves);
+
+            //Add destination square
+            child->board.bitboards[5] |= lsb_moves;
+
+            //Change move order
+            child->board.white_moves = 0;
+
+            //Remove castle rights
+            child->board.white_king_castle = 0;
+            child->board.white_queen_castle = 0;
+
+            //Locate the King
+            king_location = child->board.bitboards[5];
+        }
+        //If Black
+        else {
+            //Clear origin square
+            child->board.bitboards[11] &= ~king;
+
+            //Clear destination square
+            captures = clear_destination_square(&(child->board), lsb_moves);
+
+            //Add destination square
+            child->board.bitboards[11] |= lsb_moves;
+
+            //Change move order
+            child->board.white_moves = 1;
+
+            //Remove castle rights
+            child->board.black_king_castle = 0;
+            child->board.black_queen_castle = 0;
+
+            //Locate the King
+            king_location = child->board.bitboards[11];
+        }
+
+        //Check for checks
+        if (is_square_in_check(child->board, node->board.white_moves, king_location)) {
+            //Discard this child
+            free(child)
+            continue;
+        }
+
+        //Common color board updates
+        //Clear enpassent
+        child->board.en_passent = 0;
+
+        //Increment clocks
+        if (captures) {
+            child->board.halfmove_clock = 0;
+        }
+        else {
+            child->board.halfmove_clock += 1;
+        }
+        child->board.fullmove_clock += 1;
+
+        //Evaluate position
+        child->eval = evaluate(child->board);
+
+        //Set child's last_move
+        old_index = LSB(king);
+        new_index = LSB(lsb_moves);
+        child->last_move[0] = col_lookup_table[old_index];
+        child->last_move[1] = row_lookup_table[old_index];
+        child->last_move[2] = col_lookup_table[new_index];
+        child->last_move[3] = row_lookup_table[new_index];
+        child->last_move[4] = NULL;
+
+        //Add new child to the parent
+        node->children[children_count + created_children] = child;
+        created_children += 1;
+    }
+
+    //Look for castling moves
+    //For White
+    if (node->board.white_moves) {
+        if (node->board.white_king_castle) {
+            //Check if spaces are occupied
+            castle_occupations = 0x60;
+            if (!are_spaces_occupied(node->board, castle_occupations) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x10) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x20) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x40)) {
+                //Create a new child for the castle
+                child = m_spawn_child(node);
+                //Move the King and Rook around
+                child->board.bitboards[5] = 0x40;
+                child->board.bitboards[3] &= ~0x80;
+                child->board.bitboards[3] |= 0x20;
+                //Set all the regular new child variables
+                child->board.white_moves = 0;
+                child->board.en_passent = 0;
+                child->board.halfmove_clock += 1;
+                child->board.fullmove_clock += 1;
+                child->board.white_king_castle = 0;
+                child->board.white_queen_castle = 0;
+                child->eval = evaluate(child->board);
+                child->last_move = "e1g1";
+                node->children[children_count + created_children] = child;
+                created_children += 1;
+            }
+        }
+        if (node->board.white_queen_castle) {
+            //Check if spaces are occupied
+            castle_occupations = 0xe;
+            if (!are_spaces_occupied(node->board, castle_occupations) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x4) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x8) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x10)) {
+                //Create a new child for the castle
+                child = m_spawn_child(node);
+                //Move the King and Rook around
+                child->board.bitboards[5] = 0x4;
+                child->board.bitboards[3] &= ~0x1;
+                child->board.bitboards[3] |= 0x8;
+                //Set all the regular new child variables
+                child->board.white_moves = 0;
+                child->board.en_passent = 0;
+                child->board.halfmove_clock += 1;
+                child->board.fullmove_clock += 1;
+                child->board.white_king_castle = 0;
+                child->board.white_queen_castle = 0;
+                child->eval = evaluate(child->board);
+                child->last_move = "e1c1";
+                node->children[children_count + created_children] = child;
+                created_children += 1;
+            }
+        }
+    }
+    //For Black
+    else {
+        if (node->board.black_king_castle) {
+            //Check if spaces are occupied
+            castle_occupations = 0x6000000000000000;
+            if (!are_spaces_occupied(node->board, castle_occupations) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x1000000000000000) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x2000000000000000) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x4000000000000000)) {
+                //Create a new child for the castle
+                child = m_spawn_child(node);
+                //Move the King and Rook around
+                child->board.bitboards[11] = 0x4000000000000000;
+                child->board.bitboards[9] &= ~0x8000000000000000;
+                child->board.bitboards[9] |= 0x2000000000000000;
+                //Set all the regular new child variables
+                child->board.white_moves = 1;
+                child->board.en_passent = 0;
+                child->board.halfmove_clock += 1;
+                child->board.fullmove_clock += 1;
+                child->board.black_king_castle = 0;
+                child->board.black_queen_castle = 0;
+                child->eval = evaluate(child->board);
+                child->last_move = "e8g8";
+                node->children[children_count + created_children] = child;
+                created_children += 1;
+            }
+        }
+        if (node->board.black_queen_castle) {
+            //Check if spaces are occupied
+            castle_occupations = 0xe00000000000000;
+            if (!are_spaces_occupied(node->board, castle_occupations) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x400000000000000) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x800000000000000) &&
+                !is_square_in_check(node->board, node->board.white_moves, 0x1000000000000000)) {
+                //Create a new child for the castle
+                child = m_spawn_child(node);
+                //Move the King and Rook around
+                child->board.bitboards[11] = 0x400000000000000;
+                child->board.bitboards[9] &= ~0x100000000000000;
+                child->board.bitboards[9] |= 0x800000000000000;
+                //Set all the regular new child variables
+                child->board.white_moves = 1;
+                child->board.en_passent = 0;
+                child->board.halfmove_clock += 1;
+                child->board.fullmove_clock += 1;
+                child->board.black_king_castle = 0;
+                child->board.black_queen_castle = 0;
+                child->eval = evaluate(child->board);
+                child->last_move = "e8c8";
+                node->children[children_count + created_children] = child;
+                created_children += 1;
+            }
+        }
+    }
+
+    //Set the last child to NULL
+    node->children[children_count + created_children] = NULL;
+
+    return created_children;
 }
 
 int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
 
     struct Node *child;
-    uint64_t lsb_queen, lsb_moves, moves;
+    uint64_t lsb_queen, lsb_moves, moves, king_location;
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each queen
@@ -69,6 +283,9 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
 
                 //Change move order
                 child->board.white_moves = 0;
+
+                //Locate the King
+                king_location = child->board.bitboards[5];
             }
             //If Black
             else {
@@ -83,10 +300,13 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
 
                 //Change move order
                 child->board.white_moves = 1;
+
+                //Locate the King
+                king_location = child->board.bitboards[11];
             }
 
             //Check for checks
-            if (is_king_in_check(child->board, node->board.white_moves)) {
+            if (is_square_in_check(child->board, node->board.white_moves, king_location)) {
                 //Discard this child
                 free(child)
                 continue;
@@ -132,7 +352,7 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
 int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
 
     struct Node *child;
-    uint64_t lsb_rook, lsb_moves, moves;
+    uint64_t lsb_rook, lsb_moves, moves, king_location;
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each rook
@@ -160,6 +380,17 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
 
                 //Change move order
                 child->board.white_moves = 0;
+
+                //Remove castle rights
+                if (lsb_rook == 0x1) {
+                    child->board.white_queen_castle = 0;
+                }
+                else if (lsb_rook == 0x80) {
+                    child->board.white_king_castle = 0;
+                }
+
+                //Locate the King
+                king_location = child->board.bitboards[5];
             }
             //If Black
             else {
@@ -174,10 +405,21 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
 
                 //Change move order
                 child->board.white_moves = 1;
+
+                //Remove castle rights
+                if (lsb_rook == 0x100000000000000) {
+                    child->board.black_queen_castle = 0;
+                }
+                else if (lsb_rook == 0x8000000000000000) {
+                    child->board.black_king_castle = 0;
+                }
+
+                //Locate the King
+                king_location = child->board.bitboards[11];
             }
 
             //Check for checks
-            if (is_king_in_check(child->board, node->board.white_moves)) {
+            if (is_square_in_check(child->board, node->board.white_moves, king_location)) {
                 //Discard this child
                 free(child)
                 continue;
@@ -223,7 +465,7 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
 int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
 
     struct Node *child;
-    uint64_t lsb_bishop, lsb_moves, moves;
+    uint64_t lsb_bishop, lsb_moves, moves, king_location;
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each bishop
@@ -251,6 +493,9 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
 
                 //Change move order
                 child->board.white_moves = 0;
+
+                //Locate the King
+                king_location = child->board.bitboards[5];
             }
             //If Black
             else {
@@ -265,10 +510,13 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
 
                 //Change move order
                 child->board.white_moves = 1;
+
+                //Locate the King
+                king_location = child->board.bitboards[11];
             }
 
             //Check for checks
-            if (is_king_in_check(child->board, node->board.white_moves)) {
+            if (is_square_in_check(child->board, node->board.white_moves, king_location)) {
                 //Discard this child
                 free(child)
                 continue;
@@ -314,7 +562,7 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
 int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
 
     struct Node *child;
-    uint64_t lsb_knight, lsb_moves, moves;
+    uint64_t lsb_knight, lsb_moves, moves, king_location;
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each knight
@@ -342,6 +590,9 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
 
                 //Change move order
                 child->board.white_moves = 0;
+
+                //Locate the King
+                king_location = child->board.bitboards[5];
             }
             //If Black
             else {
@@ -356,10 +607,13 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
 
                 //Change move order
                 child->board.white_moves = 1;
+
+                //Locate the King
+                king_location = child->board.bitboards[11];
             }
 
             //Check for checks
-            if (is_king_in_check(child->board, node->board.white_moves)) {
+            if (is_square_in_check(child->board, node->board.white_moves, king_location)) {
                 //Discard this child
                 free(child)
                 continue;
@@ -430,7 +684,17 @@ int clear_destination_square(struct Board *board, uint64_t square) {
     return captures;
 }
 
-int is_king_in_check(struct Board board, int color) {
+int are_spaces_occupied(struct Board board, uint64_t spaces) {
+    int i;
+    for (i = 0; i < 12; i++) {
+        if (board.bitboards[i] & spaces) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int is_square_in_check(struct Board board, int color, uint64_t bb) {
     uint64_t ally_pieces, enemy_pieces, all_pieces;
 
     if (color) {
@@ -439,23 +703,23 @@ int is_king_in_check(struct Board board, int color) {
         all_pieces = ally_pieces | enemy_pieces;
 
         //Check for knight attacks
-        if (solo_knight_moves(board.bitboards[5], ally_pieces) & board.bitboards[7]) {
+        if (solo_knight_moves(bb, ally_pieces) & board.bitboards[7]) {
             return 1;
         }
         //Check for bishop attacks
-        if (solo_bishop_moves(board.bitboards[5], ally_pieces, all_pieces) & (board.bitboards[8] | board.bitboards[10])) {
+        if (solo_bishop_moves(bb, ally_pieces, all_pieces) & (board.bitboards[8] | board.bitboards[10])) {
             return 1;
         }
         //Check for rook attacks
-        if (solo_rook_moves(board.bitboards[5], ally_pieces, all_pieces) & (board.bitboards[9] | board.bitboards[10])) {
+        if (solo_rook_moves(bb, ally_pieces, all_pieces) & (board.bitboards[9] | board.bitboards[10])) {
             return 1;
         }
         //Check for other king attacks
-        if (solo_king_moves(board.bitboards[5], ally_pieces) & board.bitboards[11]) {
+        if (solo_king_moves(bb, ally_pieces) & board.bitboards[11]) {
             return 1;
         }
         //Check for  pawn attacks
-        if (solo_pawn_checks(board.bitboards[5], enemy_pieces, color) & board.bitboards[6]) {
+        if (solo_pawn_checks(bb, enemy_pieces, color) & board.bitboards[6]) {
             return 1;
         }
 
@@ -466,29 +730,29 @@ int is_king_in_check(struct Board board, int color) {
         all_pieces = ally_pieces | enemy_pieces;
 
         //Check for knight attacks
-        if (solo_knight_moves(board.bitboards[11], ally_pieces) & board.bitboards[1]) {
+        if (solo_knight_moves(bb, ally_pieces) & board.bitboards[1]) {
             return 1;
         }
         //Check for bishop attacks
-        if (solo_bishop_moves(board.bitboards[11], ally_pieces, all_pieces) & (board.bitboards[2] | board.bitboards[4])) {
+        if (solo_bishop_moves(bb, ally_pieces, all_pieces) & (board.bitboards[2] | board.bitboards[4])) {
             return 1;
         }
         //Check for rook attacks
-        if (solo_rook_moves(board.bitboards[11], ally_pieces, all_pieces) & (board.bitboards[3] | board.bitboards[4])) {
+        if (solo_rook_moves(bb, ally_pieces, all_pieces) & (board.bitboards[3] | board.bitboards[4])) {
             return 1;
         }
         //Check for other king attacks
-        if (solo_king_moves(board.bitboards[11], ally_pieces) & board.bitboards[5]) {
+        if (solo_king_moves(bb, ally_pieces) & board.bitboards[5]) {
             return 1;
         }
         //Check for  pawn attacks
-        if (solo_pawn_checks(board.bitboards[11], enemy_pieces, color) & board.bitboards[0]) {
+        if (solo_pawn_checks(bb, enemy_pieces, color) & board.bitboards[0]) {
             return 1;
         }
 
     }
 
-    //The king is not under attack
+    //The square is not under attack
     return 0;
 }
 
