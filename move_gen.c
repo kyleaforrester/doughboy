@@ -44,13 +44,13 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each queen
-    while (queens) {
+    for (; queens; queens &= queens - 1) {
         lsb_queen = queens & (~queens + 1);
         moves = solo_bishop_moves(lsb_queen, allies, allies | enemies) |
                 solo_rook_moves(lsb_queen, allies, allies | enemies);
 
         //Loop for each move
-        while (moves && (created_children + children_count < MAX_CHILDREN - 1)) {
+        for (; moves && (created_children + children_count < MAX_CHILDREN - 1); moves &= moves - 1) {
             lsb_moves = moves & (~moves + 1);
 
             //Create new Node
@@ -85,6 +85,13 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
                 child->board.white_moves = 1;
             }
 
+            //Check for checks
+            if (is_king_in_check(child->board, node->board.white_moves)) {
+                //Discard this child
+                free(child)
+                continue;
+            }
+
             //Common color board updates
             //Clear enpassent
             child->board.en_passent = 0;
@@ -113,13 +120,7 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
             //Add new child to the parent
             node->children[children_count + created_children] = child;
             created_children += 1;
-
-            //Remove LSB from moves
-            moves &= moves - 1;
         }
-
-        //Remove LSB from queens
-        queens &= queens - 1;
     }
 
     //Set the last child to NULL
@@ -135,12 +136,12 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each rook
-    while (rooks) {
+    for (; rooks; rooks &= rooks - 1) {
         lsb_rook = rooks & (~rooks + 1);
         moves = solo_rook_moves(lsb_rook, allies, allies | enemies);
 
         //Loop for each move
-        while (moves && (created_children + children_count < MAX_CHILDREN - 1)) {
+        for (; moves && (created_children + children_count < MAX_CHILDREN - 1); moves &= moves - 1) {
             lsb_moves = moves & (~moves + 1);
 
             //Create new Node
@@ -175,6 +176,13 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
                 child->board.white_moves = 1;
             }
 
+            //Check for checks
+            if (is_king_in_check(child->board, node->board.white_moves)) {
+                //Discard this child
+                free(child)
+                continue;
+            }
+
             //Common color board updates
             //Clear enpassent
             child->board.en_passent = 0;
@@ -203,13 +211,7 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
             //Add new child to the parent
             node->children[children_count + created_children] = child;
             created_children += 1;
-
-            //Remove LSB from moves
-            moves &= moves - 1;
         }
-
-        //Remove LSB from rooks
-        rooks &= rooks - 1;
     }
 
     //Set the last child to NULL
@@ -225,12 +227,12 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each bishop
-    while (bishops) {
+    for (; bishops; bishops &= bishops - 1) {
         lsb_bishop = bishops & (~bishops + 1);
         moves = solo_bishop_moves(lsb_bishop, allies, allies | enemies);
 
         //Loop for each move
-        while (moves && (created_children + children_count < MAX_CHILDREN - 1)) {
+        for (; moves && (created_children + children_count < MAX_CHILDREN - 1); moves &= moves - 1) {
             lsb_moves = moves & (~moves + 1);
 
             //Create new Node
@@ -265,6 +267,13 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
                 child->board.white_moves = 1;
             }
 
+            //Check for checks
+            if (is_king_in_check(child->board, node->board.white_moves)) {
+                //Discard this child
+                free(child)
+                continue;
+            }
+
             //Common color board updates
             //Clear enpassent
             child->board.en_passent = 0;
@@ -293,13 +302,7 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
             //Add new child to the parent
             node->children[children_count + created_children] = child;
             created_children += 1;
-
-            //Remove LSB from moves
-            moves &= moves - 1;
         }
-
-        //Remove LSB from bishops
-        bishops &= bishops - 1;
     }
 
     //Set the last child to NULL
@@ -315,12 +318,12 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
     int created_children = 0, captures, old_index, new_index;
 
     //Loop for each knight
-    while (knights) {
+    for (; knights; knights &= knights - 1) {
         lsb_knight = knights & (~knights + 1);
         moves = solo_knight_moves(lsb_knight, allies);
 
         //Loop for each move
-        while (moves && (created_children + children_count < MAX_CHILDREN - 1)) {
+        for (; moves && (created_children + children_count < MAX_CHILDREN - 1); moves &= moves - 1) {
             lsb_moves = moves & (~moves + 1);
 
             //Create new Node
@@ -355,6 +358,13 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
                 child->board.white_moves = 1;
             }
 
+            //Check for checks
+            if (is_king_in_check(child->board, node->board.white_moves)) {
+                //Discard this child
+                free(child)
+                continue;
+            }
+
             //Common color board updates
             //Clear enpassent
             child->board.en_passent = 0;
@@ -383,13 +393,7 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
             //Add new child to the parent
             node->children[children_count + created_children] = child;
             created_children += 1;
-
-            //Remove LSB from moves
-            moves &= moves - 1;
         }
-
-        //Remove LSB from knights
-        knights &= knights - 1;
     }
 
     //Set the last child to NULL
