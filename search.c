@@ -61,11 +61,12 @@ void *go_worker(void *argument) {
     //This worker manager will do any printing required
     //This worker manager will decide when to quit searching
     struct Go_Args args = *((struct Go_Args *)argument);
+    struct Node *my_node;
     uint64_t start_time = get_nanos(), curr_time;
     uint64_t search_time_nanos;
     //Seed with random number, diff for each thread
     uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084d);
-    int curr_depth = 0, eval_display;
+    int curr_depth = 0, eval_display, is_lock_acquired;
     char pv[MAX_BUF_SIZE];
     char **tokens;
 
@@ -101,11 +102,38 @@ void *go_worker(void *argument) {
     while (stop_pondering == 0) {
 
         //Balance exploration/exploitation to traverse randomly in the game tree
-        //Stop traversing when you hit a leaf node
+        //Stop traversing when you have a leaf node locked
+        is_lock_acquired = 0;
+        while (!is_lock_acquired) {
+            //Start search from root
+            my_node = root;
 
-        //Lock the leaf node
+            //Keep searching until our node has no children
+            while (my_node->children) {
+                //Grade each of the children by considering variables:
+                //1) Best child eval
+                //2) Total nodes visited
+                //3) Each child eval
+                //4) Each child visits
+
+                //Sort the children by their grade
+
+                //Move our node to the winning child
+            }
+            //Lock the leaf node
+
+            //If we have no children now, then we can stop searching
+            if (!my_node->children) {
+                is_lock_acquired = 1;
+            }
+            else {
+                //Someone got to our leaf node first.  Restart search.
+                //Release lock
+            }
+        }
 
         //Bloom the leaf node
+        m_bloom_node(root);
 
         //Push the new nodes' values to the parents all the way to root
 
