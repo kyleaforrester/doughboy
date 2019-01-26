@@ -35,7 +35,220 @@ int m_bloom_node(struct Node *node) {
     children_count += m_add_rook_moves(rooks, ally_pieces, enemy_pieces, node, children_count);
     children_count += m_add_queen_moves(queens, ally_pieces, enemy_pieces, node, children_count);
     children_count += m_add_king_moves(king, ally_pieces, enemy_pieces, node, children_count);
+    children_count += m_add_pawn_moves(ally_pieces, enemy_pieces, node, children_count);
 
+    return children_count;
+}
+
+struct Node *m_spawn_pawn_child(struct Node *node, lsb_pawn, lsb_moves, char transform) {
+    //Create new Node
+    child = m_spawn_child(node);
+
+    //If White
+    if (node->board.white_moves) {
+        //Clear origin square
+        child->board.bitboards[0] &= ~lsb_pawn;
+
+        //Clear destination square
+        captures = clear_destination_square(&(child->board), lsb_moves);
+
+        //Clear en-passent destination square
+        if (node->board.en_passent & lsb_moves) {
+            child->board.bitboards[6] &= ~(lsb_moves >> 8);
+        }
+
+        //Add destination square
+        //Can differ if a pawn promotion
+        if (transform == 'p') {
+            child->board.bitboards[0] |= lsb_moves;
+        }
+        else if (transform == 'n') {
+            child->board.bitboards[1] |= lsb_moves;
+        }
+        else if (transform == 'b') {
+            child->board.bitboards[2] |= lsb_moves;
+        }
+        else if (transform == 'r') {
+            child->board.bitboards[3] |= lsb_moves;
+        }
+        //It's a queen
+        else {
+            child->board.bitboards[4] |= lsb_moves;
+        }
+
+        //Change move order
+        child->board.white_moves = 0;
+
+        //Set en-passent
+        if (lsb_pawn & 0xff00 && lsb_moves & 0xff000000) {
+            child->board.en_passent = lsb_pawn << 8;
+        }
+        else {
+            child->board.en_passent = 0;
+        }
+    }
+    //If Black
+    else {
+        //Clear origin square
+        child->board.bitboards[6] &= ~lsb_pawn;
+
+        //Clear destination square
+        captures = clear_destination_square(&(child->board), lsb_moves);
+
+        //Clear en-passent destination square
+        if (node->board.en_passent & lsb_moves) {
+            child->board.bitboards[0] &= ~(lsb_moves << 8);
+        }
+
+        //Add destination square
+        //Can differ if a pawn promotion
+        if (transform == 'p') {
+            child->board.bitboards[6] |= lsb_moves;
+        }
+        else if (transform == 'n') {
+            child->board.bitboards[7] |= lsb_moves;
+        }
+        else if (transform == 'b') {
+            child->board.bitboards[8] |= lsb_moves;
+        }
+        else if (transform == 'r') {
+            child->board.bitboards[9] |= lsb_moves;
+        }
+        //It's a queen
+        else {
+            child->board.bitboards[10] |= lsb_moves;
+        }
+
+        //Change move order
+        child->board.white_moves = 1;
+
+        //Set en-passent
+        if (lsb_pawn & 0xff000000000000 && lsb_moves & 0xff00000000) {
+            child->board.en_passent = lsb_pawn >> 8;
+        }
+        else {
+            child->board.en_passent = 0;
+        }
+    }
+
+    //Common color board updates
+    //Increment clocks
+    child->board.halfmove_clock = 0;
+    child->board.fullmove_clock += 1;
+
+    //Evaluate position
+    child->eval = evaluate(child->board);
+
+    //Set child's last_move
+    old_index = LSB(lsb_pawn);
+    new_index = LSB(lsb_moves);
+    child->last_move[0] = col_lookup_table[old_index];
+    child->last_move[1] = row_lookup_table[old_index];
+    child->last_move[2] = col_lookup_table[new_index];
+    child->last_move[3] = row_lookup_table[new_index];
+    if (transform != 'p') {
+        child->last_move[4] = transform;
+        child->last_move[5] = NULL;
+    }
+    else {
+        child->last_move[4] = NULL;
+    }
+
+    return child;
+}
+
+int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+
+    struct Node *child;
+    uint64_t pawns, lsb_pawn, lsb_moves, moves, king_location;
+    int created_children = 0, captures, old_index, new_index;
+    char transformations[5], *iter;
+
+    //I am white
+    if (node->board.white_moves) {
+        pawns = node->board.bitboards[0];
+        //Loop for each pawn
+        for (; pawns; pawns &= pawns - 1) {
+            lsb_pawn = pawns & (~pawns + 1);
+            moves = solo_pawn_moves(lsb_pawn, allies | enemies, 1);
+            moves |= solo_pawn_attacks(lsb_pawn, enemies, 1);
+
+            //Loop for each move
+            for (; moves; moves &= moves - 1) {
+                lsb_moves = moves & (~moves + 1);
+
+                //Initialize pawn promotion transformations loop
+                if (lsb_moves & 0xff00000000000000) {
+                    transformations = "nbrq";
+                }
+                else {
+                    transformations = "p";
+                }
+
+                for (iter = transformations; iter && (created_children + children_count < MAX_CHILDREN - 1); iter++) {
+
+                    //Create new Node
+                    child = m_spawn_pawn_child(node, lsb_pawn, lsb_moves, *iter);
+
+                    //Check for checks
+                    if (is_square_in_check(child->board, node->board.white_moves, child->board.bitboards[5])) {
+                        //Discard this child
+                        free(child)
+                        continue;
+                    }
+
+                    //Add new child to the parent
+                    node->children[children_count + created_children] = child;
+                    created_children += 1;
+                }
+            }
+        }
+    }
+    //I am black
+    else {
+        pawns = node->board.bitboards[6];
+        //Loop for each pawn
+        for (; pawns; pawns &= pawns - 1) {
+            lsb_pawn = pawns & (~pawns + 1);
+            moves = solo_pawn_moves(lsb_pawn, allies | enemies, 0);
+            moves |= solo_pawn_attacks(lsb_pawn, enemies, 0);
+
+            //Loop for each move
+            for (; moves; moves &= moves - 1) {
+                lsb_moves = moves & (~moves + 1);
+
+                //Initialize pawn promotion transformations loop
+                if (lsb_moves & 0xff) {
+                    transformations = "nbrq";
+                }
+                else {
+                    transformations = "p";
+                }
+
+                for (iter = transformations; iter && (created_children + children_count < MAX_CHILDREN - 1); iter++) {
+
+                    //Create new Node
+                    child = m_spawn_pawn_child(node, lsb_pawn, lsb_moves, *iter);
+
+                    //Check for checks
+                    if (is_square_in_check(child->board, node->board.white_moves, child->board.bitboards[11])) {
+                        //Discard this child
+                        free(child)
+                        continue;
+                    }
+
+                    //Add new child to the parent
+                    node->children[children_count + created_children] = child;
+                    created_children += 1;
+                }
+            }
+        }
+    }
+
+    //Set the last child to NULL
+    node->children[children_count + created_children] = NULL;
+
+    return created_children;
 }
 
 int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
@@ -719,7 +932,7 @@ int is_square_in_check(struct Board board, int color, uint64_t bb) {
             return 1;
         }
         //Check for  pawn attacks
-        if (solo_pawn_checks(bb, enemy_pieces, color) & board.bitboards[6]) {
+        if (solo_pawn_checks(bb, board.bitboards[6], color)) {
             return 1;
         }
 
@@ -746,7 +959,7 @@ int is_square_in_check(struct Board board, int color, uint64_t bb) {
             return 1;
         }
         //Check for  pawn attacks
-        if (solo_pawn_checks(bb, enemy_pieces, color) & board.bitboards[0]) {
+        if (solo_pawn_checks(bb, board.bitboards[0], color)) {
             return 1;
         }
 
@@ -756,8 +969,36 @@ int is_square_in_check(struct Board board, int color, uint64_t bb) {
     return 0;
 }
 
-uint64_t solo_pawn_checks(uint64_t solo_king_bb, uint64_t enemy_pieces, int is_white) {
+uint64_t solo_pawn_checks(uint64_t solo_king_bb, uint64_t enemy_pawns, int is_white) {
     int square = LSB(solo_king_bb);
+    if (is_white) {
+        return w_pawn_attack_collisions[square] & enemy_pawns;
+    }
+    else {
+        return b_pawn_attack_collisions[square] & enemy_pawns;
+    }
+}
+
+uint64_t solo_pawn_moves(uint64_t solo_pawn_bb, uint64_t all_pieces, int is_white) {
+    uint64_t move, second_rank = 0xff00, seventh_rank = 0xff000000000000;
+    if (is_white) {
+        move = (solo_pawn_bb << 8) & ~all_pieces;
+        if (move && (solo_pawn_bb & second_rank)) {
+            move |= (move << 8) & ~all_pieces;
+        }
+    }
+    else {
+        move = (solo_pawn_bb >> 8) & ~all_pieces;
+        if (move && (solo_pawn_bb & seventh_rank)) {
+            move |= (move >> 8) & ~all_pieces;
+        }
+    }
+    return move;
+}
+
+uint64_t solo_pawn_attacks(uint64_t solo_pawn_bb, uint64_t enemy_pieces, int is_white) {
+    int square = LSB(solo_pawn_bb);
+
     if (is_white) {
         return w_pawn_attack_collisions[square] & enemy_pieces;
     }

@@ -164,10 +164,7 @@ def w_pawn_move_collisions():
     square_list = []
     for i in range(64):
         index_list = []
-        if (i >= 8 and i <= 15):
-            index_list.append(i+8)
-            index_list.append(i+16)
-        elif (i >= 16 and i <= 55):
+        if (i < 56):
             index_list.append(i+8)
         square_list.append(index_to_hex(index_list))
     return square_list
@@ -189,10 +186,7 @@ def b_pawn_move_collisions():
     square_list = []
     for i in range(64):
         index_list = []
-        if (i >= 48 and i <= 55):
-            index_list.append(i-8)
-            index_list.append(i-16)
-        elif (i <= 47 and i >= 8):
+        if (i > 7):
             index_list.append(i-8)
         square_list.append(index_to_hex(index_list))
     return square_list
