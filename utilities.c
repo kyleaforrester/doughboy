@@ -18,6 +18,16 @@ int char_count(char *str, size_t str_len, char match) {
     return count;
 }
 
+void print_tokenized_input(char **input) {
+    int i;
+
+    printf("Entered: ");
+    for (i = 0; input[i]; i++) {
+        printf("%s ", input[i]);
+    }
+    printf("\n");
+}
+
 char **m_tokenize_input(char *input, size_t input_size) {
     char *temp = malloc(sizeof(char) * input_size);
     strcpy(temp, input);
@@ -31,6 +41,7 @@ char **m_tokenize_input(char *input, size_t input_size) {
         ret_val[i] = strtok(NULL, " ");
     }
     ret_val[space_count+1] = NULL;
+    print_tokenized_input(ret_val);
     return ret_val;
 }
 
@@ -62,8 +73,8 @@ int bit_count(uint64_t bb) {
 //https://nullprogram.com/blog/2017/09/21/
 uint32_t spcg32(uint64_t s[1])
 {
-    uint64_t m = 0x9b60933458e17d7d;
-    uint64_t a = 0xd737232eeccdf7ed;
+    uint64_t m = 0x9b60933458e17d7dULL;
+    uint64_t a = 0xd737232eeccdf7edULL;
     *s = *s * m + a;
     int shift = 29 - (*s >> 61);
     return *s >> shift;

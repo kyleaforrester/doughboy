@@ -92,14 +92,14 @@ void do_move(struct Board *board, char *move) {
             //Clear and move rook squares
             //Kingside
             if (to == 6) {
-                board->bitboards[3] &= ~0x80;
-                board->bitboards[3] |= 0x20;
+                board->bitboards[3] &= ~0x80ULL;
+                board->bitboards[3] |= 0x20ULL;
                 board->white_king_castle = 0;
             }
             //Queenside
             else if (to == 2) {
-                board->bitboards[3] &= ~0x1;
-                board->bitboards[3] |= 0x8;
+                board->bitboards[3] &= ~0x1ULL;
+                board->bitboards[3] |= 0x8ULL;
                 board->white_queen_castle = 0;
             }
         }
@@ -108,14 +108,14 @@ void do_move(struct Board *board, char *move) {
             //Clear and move rook squares
             //Kingside
             if (to == 62) {
-                board->bitboards[9] &= ~0x8000000000000000;
-                board->bitboards[9] |= 0x2000000000000000;
+                board->bitboards[9] &= ~0x8000000000000000ULL;
+                board->bitboards[9] |= 0x2000000000000000ULL;
                 board->black_king_castle = 0;
             }
             //Queenside
             else if (to == 58) {
-                board->bitboards[9] &= ~0x100000000000000;
-                board->bitboards[9] |= 0x800000000000000;
+                board->bitboards[9] &= ~0x100000000000000ULL;
+                board->bitboards[9] |= 0x800000000000000ULL;
                 board->black_queen_castle = 0;
             }
         }

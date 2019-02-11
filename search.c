@@ -10,41 +10,24 @@ y = (59049**eval)*math.log(sum_visits + 2)/(math.log(visits + 2)
 
 */
 
-//This struct is used so I can pass multiple arguments to a thread.
-//pthread only allows a single address to pass to a new thread.
-struct Go_Args {
-    int ponder;
-    int ponder_enabled;
-    int wtime;
-    int btime;
-    int winc;
-    int binc;
-    int movestogo;
-    int depth;
-    int nodes;
-    int movetime;
-    int infinite;
-    int index;
-};
-
 int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
     int i;
-    struct Node *node_itr = r_node, *child_itr;
+    struct Node *node_itr = r_node, **child_itr;
     struct Node *min_child, *max_child;
     int is_user_white = r_node->board.white_moves;
 
     //The tree should be populated correctly depending on the user's move
-    while (*(node_itr->children)) {
+    while (node_itr->child_count > 0) {
 
         //Iterate through children and find min and max children
         min_child = *(node_itr->children);
         max_child = min_child;
-        for (child_itr = *(node_itr->children); child_itr; child_itr++) {
-            if (child_itr->eval > max_child->eval) {
-                max_child = child_itr;
+        for (child_itr = node_itr->children; *child_itr; child_itr++) {
+            if ((*child_itr)->eval > max_child->eval) {
+                max_child = *child_itr;
             }
-            if (child_itr->eval < min_child->eval) {
-                min_child = child_itr;
+            if ((*child_itr)->eval < min_child->eval) {
+                min_child = *child_itr;
             }
         }
 
@@ -76,7 +59,7 @@ void *go_worker(void *argument) {
     uint64_t start_time = get_nanos(), curr_time;
     uint64_t search_time_nanos;
     //Seed with random number, diff for each thread
-    uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084d);
+    uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084dULL);
     int curr_depth = 0, eval_display, is_lock_acquired;
     char pv[MAX_BUF_SIZE];
     char **tokens;
@@ -125,7 +108,7 @@ void *go_worker(void *argument) {
                 2) Depth is exhausted
                 3) Nodes is exhausted
                 */
-                if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos) || root->depth >= args.depth || root->visits >= args.nodes)) {
+                if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos && args.wtime && args.btime) || (root->depth >= args.depth && args.depth) || (root->visits >= args.nodes && args.nodes))) {
                     //Stop all searching
                     stop_pondering = 1;
                 }
@@ -155,7 +138,7 @@ void *go_worker(void *argument) {
             }
         }
 
-        if (lock_acquired) {
+        if (is_lock_acquired) {
             //Bloom the leaf node
             m_bloom_node(my_node);
 
@@ -177,14 +160,14 @@ void *go_worker(void *argument) {
                 //Remember eval is a double between 0 and 1
                 if (root->eval > 0.5) {
                     //We are winning
-                    temp_eval = math.sqrt((20000*root->eval - 10000)/(1 - root->eval))
+                    temp_eval = sqrt((20000*root->eval - 10000)/(1 - root->eval));
                     //Round to nearest int
                     eval_display = (int) (temp_eval + 0.5);
                 }
                 else if (root->eval < 0.5) {
                     //We are losing
                     temp_eval = 1 - root->eval;
-                    temp_eval = math.sqrt((20000*temp_eval - 10000)/(1 - temp_eval))
+                    temp_eval = sqrt((20000*temp_eval - 10000)/(1 - temp_eval));
                     //Round to nearest int
                     eval_display = (int) (-temp_eval - 0.5);
                 }
@@ -192,6 +175,7 @@ void *go_worker(void *argument) {
                     eval_display = 0;
                 }
                 printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
+                pv[0] = 0;
             }
         }
     }
@@ -199,14 +183,13 @@ void *go_worker(void *argument) {
     //Manager thread prints information back to GUI
     if (args.index == 0) {
         get_pv(root, pv, sizeof(pv));
-        tokens = m_tokenize_input(pv, sizeof(pv));
         if (args.ponder_enabled) {
-            printf("bestmove %s ponder %s\n", tokens[0], tokens[1]);
+            printf("bestmove %s ponder %s\n", pv, pv);
         }
         else {
-            printf("bestmove %s\n", tokens[0]);
+            printf("bestmove %s\n", pv);
         }
-        free_tokenize_input(tokens);
+        pv[0] = 0;
     }
 
 }
@@ -220,14 +203,14 @@ struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
     //Calculate softmax for each child and store sum
     for (i = 0; i < parent->child_count; i++) {
         child_iter = parent->children[i];
-        soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(chld_iter->visits + 2);
+        soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(child_iter->visits + 2);
         soft_max_scores[i] *= soft_max_scores[i];
         soft_max_sum += soft_max_scores[i];
     }
 
     //Iterate through moves until a child's percentage is hit
     for (i = 0; i < parent->child_count - 1; i++) {
-        if ((double)spcg32(prng_state) / (double)0x100000000 <= soft_max_scores[i] / soft_max_sum) {
+        if ((double)spcg32(prng_state) / (double)0x100000000ULL <= soft_max_scores[i] / soft_max_sum) {
             //Child found!
             return parent->children[i];
         }
@@ -288,15 +271,15 @@ void set_root_node(int ponder) {
 void spawn_go_workers(int ponder, int wtime, int btime, int winc, int binc, int movestogo, int depth, int nodes, int movetime, int infinite) {
 
     int result_code, thread_count = 1, i, ponder_enabled = 0;
-    struct Option *option_itr;
+    struct Option **option_itr;
 
     //Check engine options
-    for (option_itr = *options; option_itr; option_itr++) {
-        if (strcmp(option_itr->name, "Threads") == 0) {
-            thread_count = option_itr->spin;
+    for (option_itr = options; *option_itr; option_itr++) {
+        if (strcmp((*option_itr)->name, "Threads") == 0) {
+            thread_count = (*option_itr)->spin;
         }
-        else if (strcmp(option_itr->name, "Ponder") == 0) {
-            ponder_enabled = option_itr->check;
+        else if (strcmp((*option_itr)->name, "Ponder") == 0) {
+            ponder_enabled = (*option_itr)->check;
         }
     }
 

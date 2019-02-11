@@ -144,7 +144,7 @@ def king_collisions():
             index_list.append(i+1)
         #Southeast
         if (math.floor((i-7)/8) >= 0 and i%8 < (i-7)%8):
-            index_list.append(i+1)
+            index_list.append(i-7)
         #South
         if (math.floor((i-8)/8) >= 0):
             index_list.append(i-8)
@@ -413,12 +413,12 @@ def print_bitboard(integer):
         print('')
 
 def print_square_lookup_table():
-    for col in 'abcdefgh':
+    for col in '12345678':
         for i in range(8):
             print(col, end=',')
     print()
     for i in range(8):
-        for row in '12345678':
+        for row in 'abcdefgh':
             print(row, end=',')
 
 def basic_eval_pawn_tables(is_white):
@@ -438,3 +438,8 @@ def basic_eval_pawn_tables(is_white):
                 print('{0:.2f}'.format(3**((6 - row)/5) * edge_penalty), end=',')
             else:
                 print('{0:.2f}'.format(3**((6 - row)/5)), end=',')
+
+def table_translate_lsb_index_my_index():
+    for y in range(8):
+        for x in range(7, -1, -1):
+            print('{},'.format(8*y + x), end='')

@@ -86,6 +86,7 @@ void fill_char_board(char *board, size_t board_size);
 
 /*
 //magic_values.c
+int lsb_index_translation[64];
 char col_lookup_table[64];
 char row_lookup_table[64];
 uint64_t knight_collisions[64];
@@ -154,3 +155,8 @@ uint64_t get_nanos();
 
 //basic_eval.c
 double evaluate(struct Board board);
+double evaluate_pawns(struct Board board, int color);
+double evaluate_knights(struct Board board, int color);
+double evaluate_bishops(struct Board board, int color);
+double evaluate_rooks(struct Board board, int color);
+double evaluate_queens(struct Board board, int color);

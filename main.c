@@ -52,7 +52,7 @@ void parse_go(char *buffer, size_t buf_size) {
     int word_count, i;
     char **com_tokens = m_tokenize_input(buffer, buf_size);
     char *com_token_itr;
-    int ponder, wtime, btime, winc, binc, movestogo, depth, nodes, movetime, infinite;
+    int ponder = 0, wtime = 0, btime = 0, winc = 0, binc = 0, movestogo = 0, depth = 0, nodes = 0, movetime = 0, infinite = 0;
 
     if (!root) {
         root = malloc(sizeof(struct Node));
@@ -74,41 +74,33 @@ void parse_go(char *buffer, size_t buf_size) {
         return;
     }
 
-    for (com_token_itr = (*com_tokens+1); com_token_itr; com_token_itr++) {
+    for (com_token_itr = (*com_tokens+1); *com_token_itr; com_token_itr++) {
         if (strcmp(com_token_itr, "ponder") == 0) {
             ponder = 1;
         }
         else if (strcmp(com_token_itr, "wtime") == 0) {
             wtime = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "btime") == 0) {
             btime = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "winc") == 0) {
             winc = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "binc") == 0) {
             binc = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "movestogo") == 0) {
             movestogo = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "depth") == 0) {
             depth = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "nodes") == 0) {
             nodes = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "movetime") == 0) {
             movetime = atoi(com_token_itr + 1);
-            com_token_itr++;
         }
         else if (strcmp(com_token_itr, "infinite") == 0) {
             infinite = 1;
@@ -164,8 +156,10 @@ void parse_position(char *buffer, size_t buf_size) {
         }
     }
 
-    free_node(root);
-    root = NULL;
+    if (root) {
+        free_node(root);
+        root = NULL;
+    }
     free_tokenize_input(com_tokens);
 }
 
@@ -224,19 +218,19 @@ void initialize_options() {
 void initialize_board() {
     curr_board = malloc(sizeof(struct Board));
     //White
-    curr_board->bitboards[0] = 0xff00;
-    curr_board->bitboards[1] = 0x42;
-    curr_board->bitboards[2] = 0x24;
-    curr_board->bitboards[3] = 0x81;
-    curr_board->bitboards[4] = 0x8;
-    curr_board->bitboards[5] = 0x10;
+    curr_board->bitboards[0] = 0xff00ULL;
+    curr_board->bitboards[1] = 0x42ULL;
+    curr_board->bitboards[2] = 0x24ULL;
+    curr_board->bitboards[3] = 0x81ULL;
+    curr_board->bitboards[4] = 0x8ULL;
+    curr_board->bitboards[5] = 0x10ULL;
     //Black
-    curr_board->bitboards[6] = 0xff000000000000;
-    curr_board->bitboards[7] = 0x4200000000000000;
-    curr_board->bitboards[8] = 0x2400000000000000;
-    curr_board->bitboards[9] = 0x8100000000000000;
-    curr_board->bitboards[10] = 0x800000000000000;
-    curr_board->bitboards[11] = 0x1000000000000000;
+    curr_board->bitboards[6] = 0xff000000000000ULL;
+    curr_board->bitboards[7] = 0x4200000000000000ULL;
+    curr_board->bitboards[8] = 0x2400000000000000ULL;
+    curr_board->bitboards[9] = 0x8100000000000000ULL;
+    curr_board->bitboards[10] = 0x800000000000000ULL;
+    curr_board->bitboards[11] = 0x1000000000000000ULL;
 
     curr_board->white_moves = 1;
     curr_board->white_king_castle = 1;

@@ -41,7 +41,7 @@ double evaluate(struct Board board) {
         return (total_score*total_score + 10000)/(total_score*total_score + 20000);
     }
     else if (total_score < 0) {
-        return 1 - (total_score*total_score + 10000)/(total_score*total_score + 20000)
+        return 1 - (total_score*total_score + 10000)/(total_score*total_score + 20000);
     }
     else {
         return 0.5;
