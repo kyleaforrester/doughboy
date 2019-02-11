@@ -420,3 +420,21 @@ def print_square_lookup_table():
     for i in range(8):
         for row in '12345678':
             print(row, end=',')
+
+def basic_eval_pawn_tables(is_white):
+    
+    edge_penalty = 0.8
+    if (is_white):
+        for i in range(64):
+            row = math.floor(i/8)
+            if (i%8 == 0 or i%8 == 7):
+                print('{0:.2f}'.format(3**((row - 1)/5) * edge_penalty), end=',')
+            else:
+                print('{0:.2f}'.format(3**((row - 1)/5)), end=',')
+    else:
+        for i in range(64):
+            row = math.floor(i/8)
+            if (i%8 == 0 or i%8 == 7):
+                print('{0:.2f}'.format(3**((6 - row)/5) * edge_penalty), end=',')
+            else:
+                print('{0:.2f}'.format(3**((6 - row)/5)), end=',')

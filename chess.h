@@ -159,3 +159,6 @@ void free_node(struct Node *my_node);
 int bit_count(uint64_t bb);
 uint32_t spcg32(uint64_t s[1])
 uint64_t get_nanos();
+
+//basic_eval.c
+double evaluate(struct Board board);
