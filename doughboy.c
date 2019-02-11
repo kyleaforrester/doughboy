@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <time.h>
+#include <math.h>
 
 #define DOUGHBOY_VERSION "v0.1.0"
 #define LOG(x,y) if (x) printf(y)
@@ -49,8 +50,12 @@ struct Node {
     struct Board board;
     int visits;
     int depth;
+    int height;
     double eval;
+    int is_checkmate;
+    int is_stalemate;
     struct Node **children;
+    int child_count;
     struct Node *parent;
     char last_move[6];
     pthread_mutex_t mutex;

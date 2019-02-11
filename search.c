@@ -1,3 +1,14 @@
+/*
+Formula to convert from centipawns to 0-1 win percentage eval:
+y = (x**2 + 10000)/(x**2 + 20000)
+
+Formula to convert from 0-1 win percentage eval to centipawns:
+y = ((20000x - 10000)/(1-x))**(1/2)
+
+Formula to rank a nodes' visit calculation score:
+y = (59049**eval)*math.log(sum_visits + 2)/(math.log(visits + 2)
+
+*/
 
 //This struct is used so I can pass multiple arguments to a thread.
 //pthread only allows a single address to pass to a new thread.
@@ -69,6 +80,7 @@ void *go_worker(void *argument) {
     int curr_depth = 0, eval_display, is_lock_acquired;
     char pv[MAX_BUF_SIZE];
     char **tokens;
+    double temp_eval;
 
     //Manager thread: Estimate how much time to search
     if (args.index == 0) {
@@ -100,74 +112,86 @@ void *go_worker(void *argument) {
 
     //Every thread keeps searching while pondering is on
     while (stop_pondering == 0) {
-
         //Balance exploration/exploitation to traverse randomly in the game tree
         //Stop traversing when you have a leaf node locked
         is_lock_acquired = 0;
-        while (!is_lock_acquired) {
+        while (!is_lock_acquired && stop_pondering == 0) {
+            //Managerial duties for the manager thread = 0
+            if (args.index == 0) {
+                curr_time = get_nanos();
+                /*
+                Giving all possible reasons to stop searching:
+                1) Calculated search time is expired
+                2) Depth is exhausted
+                3) Nodes is exhausted
+                */
+                if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos) || root->depth >= args.depth || root->visits >= args.nodes)) {
+                    //Stop all searching
+                    stop_pondering = 1;
+                }
+            }
             //Start search from root
             my_node = root;
 
             //Keep searching until our node has no children
             while (my_node->children) {
-                //Grade each of the children by considering variables:
-                //1) Best child eval
-                //2) Total nodes visited
-                //3) Each child eval
-                //4) Each child visits
-
-                //Sort the children by their grade
-
-                //Move our node to the winning child
+                //Navigate to a worthy child by considering variables:
+                //1) Total nodes visited
+                //2) Each child eval
+                //3) Each child visits
+                my_node = select_child_nav(my_node, &prng_state);
             }
             //Lock the leaf node
+            pthread_mutex_lock(&(my_node->mutex));
 
             //If we have no children now, then we can stop searching
-            if (!my_node->children) {
+            if (!my_node->children && !my_node->is_checkmate) {
                 is_lock_acquired = 1;
             }
             else {
                 //Someone got to our leaf node first.  Restart search.
                 //Release lock
+                pthread_mutex_unlock(&(my_node->mutex));
             }
         }
 
-        //Bloom the leaf node
-        m_bloom_node(root);
+        if (lock_acquired) {
+            //Bloom the leaf node
+            m_bloom_node(my_node);
 
-        //Push the new nodes' values to the parents all the way to root
+            //Push the new nodes' values from the parents all the way to root
+            collapse_values(my_node);
+
+            //Release lock
+            pthread_mutex_unlock(&(my_node->mutex));
+        }
 
         //Managerial duties for the manager thread = 0
         if (args.index == 0) {
-
-            curr_time = get_nanos();
-
             //Print out depth information if new depth is reached
             if (root->depth > curr_depth) {
+                curr_time = get_nanos();
                 curr_depth = root->depth;
                 get_pv(root, pv, sizeof(pv));
-                //Display integer version of eval
-                if (root->eval > 0) {
-                    eval_display = (int) (root->eval + 0.5);
+                //Display cp version of eval
+                //Remember eval is a double between 0 and 1
+                if (root->eval > 0.5) {
+                    //We are winning
+                    temp_eval = math.sqrt((20000*root->eval - 10000)/(1 - root->eval))
+                    //Round to nearest int
+                    eval_display = (int) (temp_eval + 0.5);
                 }
-                else if (root->eval < 0) {
-                    eval_display = (int) (root->eval - 0.5);
+                else if (root->eval < 0.5) {
+                    //We are losing
+                    temp_eval = 1 - root->eval;
+                    temp_eval = math.sqrt((20000*temp_eval - 10000)/(1 - temp_eval))
+                    //Round to nearest int
+                    eval_display = (int) (-temp_eval - 0.5);
                 }
                 else {
                     eval_display = 0;
                 }
                 printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
-            }
-
-            /*
-            Giving all possible reasons to stop searching:
-            1) Calculated search time is expired
-            2) Depth is exhausted
-            3) Nodes is exhausted
-            */
-            if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos) || root->depth >= args.depth || root->visits >= args.nodes)) {
-                //Stop all searching
-                stop_pondering = 1;
             }
         }
     }
@@ -183,6 +207,76 @@ void *go_worker(void *argument) {
             printf("bestmove %s\n", tokens[0]);
         }
         free_tokenize_input(tokens);
+    }
+
+}
+
+struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
+    double soft_max_sum = 0;
+    struct Node *child_iter;
+    double soft_max_scores[MAX_CHILDREN];
+    int i, child_found = 0;
+
+    //Calculate softmax for each child and store sum
+    for (i = 0; i < parent->child_count; i++) {
+        child_iter = parent->children[i];
+        soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(chld_iter->visits + 2);
+        soft_max_scores[i] *= soft_max_scores[i];
+        soft_max_sum += soft_max_scores[i];
+    }
+
+    //Iterate through moves until a child's percentage is hit
+    for (i = 0; i < parent->child_count - 1; i++) {
+        if ((double)spcg32(prng_state) / (double)0x100000000 <= soft_max_scores[i] / soft_max_sum) {
+            //Child found!
+            return parent->children[i];
+        }
+    }
+
+    //No child was found so far.  Therefore we send the last child!
+    return parent->children[parent->child_count - 1];
+}
+
+void collapse_values(struct Node *my_node) {
+    int i, visit_sum = 0;
+    double min_eval = 1, max_eval = 0;
+    struct Node *child;
+
+    //Update with child information
+    for (i = 0; i < my_node->child_count; i++) {
+        child = my_node->children[i];
+        //Gathering visitation information
+        visit_sum += child->visits;
+        //Setting depth for info and search purposes
+        if (child->depth >= my_node->depth) {
+            my_node->depth = child->depth + 1;
+        }
+        //Find min_eval
+        if (child->eval > max_eval) {
+            max_eval = child->eval;
+        }
+        //Find max_eval
+        if (child->eval < min_eval) {
+            min_eval = child->eval;
+        }
+    }
+
+    //Update Visits
+    my_node->visits = visit_sum;
+
+    //Update Eval
+    if (my_node->height % 2 == 0) {
+        //It is my move!
+        my_node->eval = max_eval;
+    }
+    else {
+        //It is opponents move
+        my_node->eval = min_eval;
+    }
+
+    //Perform for each parent
+    if (my_node->parent) {
+        collapse_values(my_node->parent);
     }
 
 }

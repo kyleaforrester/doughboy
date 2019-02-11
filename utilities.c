@@ -39,6 +39,16 @@ void free_tokenize_input(char **input) {
     free(input);
 }
 
+void free_node(struct Node *my_node) {
+    int i;
+    for (i = 0; i < my_node->child_count; i++) {
+        free_node(my_node->children[i]);
+    }
+
+    free(my_node->children);
+    free(my_node);
+}
+
 int bit_count(uint64_t bb) {
     int i;
     for (i = 0; bb; i++) {

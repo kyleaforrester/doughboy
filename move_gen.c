@@ -37,6 +37,33 @@ int m_bloom_node(struct Node *node) {
     children_count += m_add_king_moves(king, ally_pieces, enemy_pieces, node, children_count);
     children_count += m_add_pawn_moves(ally_pieces, enemy_pieces, node, children_count);
 
+    node->child_count = children_count;
+
+    //Set checkmate or stalemate flags so we know not to bloom this node again
+    if (children_count == 0) {
+        if (node->board.white_moves) {
+            //It is white's turn
+            if (is_square_in_check(node->board, 0, king)) {
+                //Black could kill the king
+                node->is_checkmate = 1;
+            }
+            else {
+                node->is_stalemate = 1;
+            }
+        }
+        else {
+            //It is black's turn
+            if (is_square_in_check(node->board, 1, king)) {
+                //White could kill the king
+                node->is_checkmate = 1;
+            }
+            else {
+                node->is_stalemate = 1;
+            }
+
+        }
+    }
+
     return children_count;
 }
 
@@ -869,7 +896,7 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
     return created_children;
 }
 
-struct Node *spawn_child(struct Node *node) {
+struct Node *m_spawn_child(struct Node *node) {
     int i;
 
     struct Node *new_node = malloc(sizeof(struct Node));
@@ -877,8 +904,12 @@ struct Node *spawn_child(struct Node *node) {
     new_node->board = node->board;
     new_node->visits = 1;
     new_node->depth = 0;
+    new_node->height = node->height + 1;
+    new_node->is_checkmate = 0;
+    new_node->is_stalemate = 0;
     new_node->eval = 0;
     new_node->children = NULL;
+    new_node->child_count = 0;
     new_node->parent = node;
     pthread_mutex_init(&(new_node->mutex), NULL);
 

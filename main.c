@@ -58,9 +58,14 @@ void parse_go(char *buffer, size_t buf_size) {
         root = malloc(sizeof(struct Node));
         root->board = *curr_board;
         root->visits = 0;
+        root->height = 0;
+        root->depth = 0;
         root->eval = 0;
+        root->is_checkmate = 0;
+        root->is_stalemate = 0;
         root->parent = NULL;
         root->children = NULL;
+        root->child_count = 0;
         pthread_mutex_init(&(root->mutex), NULL);
     }
 
@@ -159,6 +164,8 @@ void parse_position(char *buffer, size_t buf_size) {
         }
     }
 
+    free_node(root);
+    root = NULL;
     free_tokenize_input(com_tokens);
 }
 
