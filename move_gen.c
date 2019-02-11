@@ -67,7 +67,7 @@ int m_bloom_node(struct Node *node) {
     return children_count;
 }
 
-struct Node *m_spawn_pawn_child(struct Node *node, lsb_pawn, lsb_moves, char transform) {
+struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t lsb_moves, char transform) {
     //Create new Node
     child = m_spawn_child(node);
 

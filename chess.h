@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <time.h>
 #include <math.h>
+#include <stdint.h>
 
 #define DOUGHBOY_VERSION "v0.1.0"
 #define LOG(x,y) if (x) printf(y)
@@ -12,17 +13,6 @@
 #define NELEMS(x) (sizeof(x)/sizeof((x)[0]))
 #define LSB(v)    __builtin_ctzll(v)
 #define MAX_CHILDREN 200
-
-#ifndef __uint32_t_defined
-typedef unsigned int            uint32_t;
-# define __uint32_t_defined
-#endif
-#if __WORDSIZE == 64
-typedef unsigned long int       uint64_t;
-#else
-__extension__
-typedef unsigned long long int  uint64_t;
-#endif
 
 struct Option {
     char name[50];
@@ -94,6 +84,7 @@ void set_to_fen(struct Board *board, char *piece_placement, char *color, char *c
 void fill_char_board_bb(char *board, size_t board_size, uint64_t bb, char piece);
 void fill_char_board(char *board, size_t board_size);
 
+/*
 //magic_values.c
 char col_lookup_table[64];
 char row_lookup_table[64];
@@ -104,9 +95,10 @@ uint64_t king_collisions[64];
 uint64_t w_pawn_attack_collisions[64];
 uint64_t b_pawn_attack_collisions[64];
 uint64_t rook_magic_numbers[64];
-uint64_t bishop_magic_numbers[64];
+uint64_t bishop_magic_numbers[64][512];
 uint64_t rook_magic_move_sets[64][4096];
 uint64_t bishop_magic_move_sets[64];
+*/
 
 //main.c
 void parse_uci(char *buffer, size_t buf_size);
@@ -123,7 +115,7 @@ int main(int argc, char **argv);
 
 //move_gen.c
 int m_bloom_node(struct Node *node);
-struct Node *m_spawn_pawn_child(struct Node *node, lsb_pawn, lsb_moves, char transform);
+struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t lsb_moves, char transform);
 int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
 int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
 int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
@@ -157,7 +149,7 @@ char **m_tokenize_input(char *input, size_t input_size);
 void free_tokenize_input(char **input);
 void free_node(struct Node *my_node);
 int bit_count(uint64_t bb);
-uint32_t spcg32(uint64_t s[1])
+uint32_t spcg32(uint64_t s[1]);
 uint64_t get_nanos();
 
 //basic_eval.c
