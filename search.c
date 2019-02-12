@@ -19,6 +19,11 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
     //The tree should be populated correctly depending on the user's move
     while (node_itr->child_count > 0) {
 
+        //Output a space except if it is the first entry
+        if (node_itr != r_node) {
+            strcat(buffer, " ");
+        }
+
         //Iterate through children and find min and max children
         min_child = *(node_itr->children);
         max_child = min_child;
@@ -34,14 +39,12 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
         //It is my move!
         //Get the Max child node
         if (node_itr->height % 2 == 0) {
-            strcat(buffer, " ");
             strcat(buffer, max_child->last_move);
             node_itr = max_child;
         }
         //It is opponent's move
         //Get the Min child node
         else {
-            strcat(buffer, " ");
             strcat(buffer, min_child->last_move);
             node_itr = min_child;
         }
@@ -174,7 +177,7 @@ void *go_worker(void *argument) {
                 else {
                     eval_display = 0;
                 }
-                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv%s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
+                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
                 fflush(stdout);
                 pv[0] = 0;
             }
@@ -184,12 +187,14 @@ void *go_worker(void *argument) {
     //Manager thread prints information back to GUI
     if (args.index == 0) {
         get_pv(root, pv, sizeof(pv));
+        tokens = m_tokenize_input(pv, strlen(pv));
         if (args.ponder_enabled) {
-            printf("bestmove %s ponder %s\n", pv, pv);
+            printf("bestmove %s ponder %s\n", tokens[0], tokens[1]);
         }
         else {
-            printf("bestmove %s\n", pv);
+            printf("bestmove %s\n", tokens[0]);
         }
+        free_tokenize_input(tokens);
         pv[0] = 0;
     }
     fflush(stdout);
