@@ -385,6 +385,8 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
             //Check if spaces are occupied
             castle_occupations = 0x60ULL;
             if (!are_spaces_occupied(node->board, castle_occupations) &&
+                node->board.bitboards[5] & 0x10ULL &&
+                node->board.bitboards[3] & 0x80ULL &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x10ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x20ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x40ULL)) {
@@ -411,6 +413,8 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
             //Check if spaces are occupied
             castle_occupations = 0xeULL;
             if (!are_spaces_occupied(node->board, castle_occupations) &&
+                node->board.bitboards[5] & 0x10ULL &&
+                node->board.bitboards[3] & 0x1ULL &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x4ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x8ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x10ULL)) {
@@ -440,6 +444,8 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
             //Check if spaces are occupied
             castle_occupations = 0x6000000000000000ULL;
             if (!are_spaces_occupied(node->board, castle_occupations) &&
+                node->board.bitboards[11] & 0x1000000000000000ULL &&
+                node->board.bitboards[9] & 0x8000000000000000ULL &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x1000000000000000ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x2000000000000000ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x4000000000000000ULL)) {
@@ -466,6 +472,8 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
             //Check if spaces are occupied
             castle_occupations = 0xe00000000000000ULL;
             if (!are_spaces_occupied(node->board, castle_occupations) &&
+                node->board.bitboards[11] & 0x1000000000000000ULL &&
+                node->board.bitboards[9] & 0x100000000000000ULL &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x400000000000000ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x800000000000000ULL) &&
                 !is_square_in_check(node->board, node->board.white_moves, 0x1000000000000000ULL)) {
