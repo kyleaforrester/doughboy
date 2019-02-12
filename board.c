@@ -159,6 +159,14 @@ void do_move(struct Board *board, char *move) {
         board->bitboards[bb] |= to_bb;
         board->en_passent = 0;
     }
+
+    //Change player move
+    if (board->white_moves) {
+        board->white_moves = 0;
+    }
+    else {
+        board->white_moves = 1;
+    }
 }
 
 void set_piece_placement(struct Board *board, char *piece_placement) {

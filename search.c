@@ -33,7 +33,7 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
 
         //It is my move!
         //Get the Max child node
-        if ((is_user_white && node_itr->board.white_moves) || (!is_user_white && !node_itr->board.white_moves)) {
+        if (node_itr->height % 2 == 0) {
             strcat(buffer, " ");
             strcat(buffer, max_child->last_move);
             node_itr = max_child;
@@ -174,7 +174,7 @@ void *go_worker(void *argument) {
                 else {
                     eval_display = 0;
                 }
-                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
+                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv%s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
                 pv[0] = 0;
             }
         }

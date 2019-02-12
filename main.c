@@ -51,7 +51,7 @@ void parse_isready(char *buffer, size_t buf_size) {
 void parse_go(char *buffer, size_t buf_size) {
     int word_count, i;
     char **com_tokens = m_tokenize_input(buffer, buf_size);
-    char *com_token_itr;
+    char **com_token_itr;
     int ponder = 0, wtime = 0, btime = 0, winc = 0, binc = 0, movestogo = 0, depth = 0, nodes = 0, movetime = 0, infinite = 0;
 
     if (!root) {
@@ -74,35 +74,35 @@ void parse_go(char *buffer, size_t buf_size) {
         return;
     }
 
-    for (com_token_itr = (*com_tokens+1); *com_token_itr; com_token_itr++) {
-        if (strcmp(com_token_itr, "ponder") == 0) {
+    for (com_token_itr = com_tokens; *com_token_itr; com_token_itr++) {
+        if (strcmp(*com_token_itr, "ponder") == 0) {
             ponder = 1;
         }
-        else if (strcmp(com_token_itr, "wtime") == 0) {
-            wtime = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "wtime") == 0) {
+            wtime = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "btime") == 0) {
-            btime = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "btime") == 0) {
+            btime = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "winc") == 0) {
-            winc = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "winc") == 0) {
+            winc = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "binc") == 0) {
-            binc = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "binc") == 0) {
+            binc = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "movestogo") == 0) {
-            movestogo = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "movestogo") == 0) {
+            movestogo = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "depth") == 0) {
-            depth = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "depth") == 0) {
+            depth = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "nodes") == 0) {
-            nodes = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "nodes") == 0) {
+            nodes = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "movetime") == 0) {
-            movetime = atoi(com_token_itr + 1);
+        else if (strcmp(*com_token_itr, "movetime") == 0) {
+            movetime = atoi(*(com_token_itr + 1));
         }
-        else if (strcmp(com_token_itr, "infinite") == 0) {
+        else if (strcmp(*com_token_itr, "infinite") == 0) {
             infinite = 1;
         }
     }
