@@ -265,9 +265,10 @@ int main(int argc, char **argv) {
     initialize_board();
     stop_pondering = 0;
 
-    while (getline(&buffer, &buf_size, stdin) <= MAX_BUF_SIZE) {
+    while (fgets(buffer, buf_size, stdin) != NULL) {
+        //printf("Received input:\n%s\n", buffer);
         //Strip the newline char off buffer
-        buffer[strlen(buffer)-1] = 0;
+        strip_line_endings(buffer, strlen(buffer));
         if (!str_first_word(first_word, MAX_BUF_SIZE, buffer)) {
             printf("Failed to parse first word of:\n%s\n",buffer);
             continue;
@@ -304,9 +305,14 @@ int main(int argc, char **argv) {
             LOG(debug, "Stop detected!");
             parse_stop(buffer, strlen(buffer));
         }
+        else if (strcmp(first_word, "exit") == 0 || strcmp(first_word, "quit") == 0) {
+            LOG(debug, "Exiting Doughboy!");
+            exit(0);
+        }
         else {
             LOG(debug, "Received Unknown command.");
         }
+        buffer[0] = 0;
     }
 
 

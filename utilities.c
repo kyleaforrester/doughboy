@@ -1,7 +1,7 @@
 
 int str_first_word(char *buffer, int buf_size, char *input) {
     int i;
-    for (i = 0; *(input+i) != ' ' && *(input+i) != '\n' && i < buf_size-1; i++) {
+    for (i = 0; i < strlen(input) && *(input+i) != ' ' && *(input+i) != '\n' && i < buf_size-1; i++) {
         *(buffer+i) = *(input+i);
     }
     *(buffer+i) = '\0';
@@ -43,6 +43,18 @@ char **m_tokenize_input(char *input, size_t input_size) {
     ret_val[space_count+1] = NULL;
     //print_tokenized_input(ret_val);
     return ret_val;
+}
+
+void strip_line_endings(char *input, size_t input_size) {
+    int i;
+    char *start = input;
+    //Find the end of the input
+    for (i = 0; *input && i < input_size; input++, i++);
+
+    //Walk backwards deleting line endings
+    for (i = 1; (input - i) >= start && (input[-i] == '\r' || input[-i] == '\n'); i++) {
+        input[-i] = 0;
+    }
 }
 
 void free_tokenize_input(char **input) {
