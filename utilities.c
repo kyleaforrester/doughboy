@@ -1,4 +1,18 @@
 
+//Taken from KnR Second Edition Section 7.7
+char *knr_fgets(char *s, int n, FILE *iop) {
+    register int c;
+    register char *cs;
+
+    cs = s;
+    while (--n > 0 && (c = getc(iop)) != EOF) {
+        if ((*cs++ = c) == '\n')
+            break;
+    }
+    *cs = '\0';
+    return (c == EOF && cs == s) ? NULL : s;
+}
+
 int str_first_word(char *buffer, int buf_size, char *input) {
     int i;
     for (i = 0; i < strlen(input) && *(input+i) != ' ' && *(input+i) != '\n' && i < buf_size-1; i++) {

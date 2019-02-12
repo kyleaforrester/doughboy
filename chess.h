@@ -144,6 +144,7 @@ void set_root_node(int ponder);
 void spawn_go_workers(int ponder, int wtime, int btime, int winc, int binc, int movestogo, int depth, int nodes, int movetime, int infinite);
 
 //utilities.c
+char *knr_fgets(char *s, int n, FILE *iop);
 int str_first_word(char *buffer, int buf_size, char *input);
 void strip_line_endings(char *input, size_t input_size);
 int char_count(char *str, size_t str_len, char match);

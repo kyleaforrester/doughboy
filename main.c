@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     initialize_board();
     stop_pondering = 0;
 
-    while (fgets(buffer, buf_size, stdin) != NULL) {
+    while (knr_fgets(buffer, buf_size, stdin) != NULL) {
         //printf("Received input:\n%s\n", buffer);
         //Strip the newline char off buffer
         strip_line_endings(buffer, strlen(buffer));
@@ -313,6 +313,7 @@ int main(int argc, char **argv) {
             LOG(debug, "Received Unknown command.");
         }
         buffer[0] = 0;
+        fflush(stdout);
     }
 
 

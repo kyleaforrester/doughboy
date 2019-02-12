@@ -175,6 +175,7 @@ void *go_worker(void *argument) {
                     eval_display = 0;
                 }
                 printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv%s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
+                fflush(stdout);
                 pv[0] = 0;
             }
         }
@@ -191,7 +192,7 @@ void *go_worker(void *argument) {
         }
         pv[0] = 0;
     }
-
+    fflush(stdout);
 }
 
 struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
