@@ -5,6 +5,7 @@ void parse_uci(char *buffer, size_t buf_size) {
     printf("\n");
     printf("option name Threads type spin default 1 min 1 max 128\n");
     printf("option name Ponder type check default false\n");
+    printf("option name SearchMemory type spin default 256 min 16 max 8192\n");
     printf("uciok\n");
     return;
 }
@@ -37,6 +38,9 @@ void parse_setoption(char *buffer, size_t buf_size) {
                 else {
                     (*o_itr)->check = 0;
                 }
+            }
+            else if (strcmp((*o_itr)->name, "SearchMemory") == 0) {
+                (*o_itr)->spin = atoi(parsed_string[4]);
             }
         }
     }
@@ -177,6 +181,9 @@ void parse_printoptions(char *buffer, size_t buf_size) {
                 printf("Ponder: true\n");
             }
         }
+        else if (strcmp((*o_itr)->name, "SearchMemory") == 0) {
+            printf("SearchMemory: %d\n", (*o_itr)->spin);
+        }
     }
 }
 
@@ -204,13 +211,16 @@ void parse_printboard(char *buffer, size_t buf_size) {
 
 void initialize_options() {
     struct Option **o_itr;
-    options = malloc(sizeof(struct Option *) * 3);
+    options = malloc(sizeof(struct Option *) * 4);
     o_itr = options;
     *o_itr = malloc(sizeof(struct Option));
     **o_itr = (struct Option){.name="Threads", .check=0, .string="", .spin=1};
     o_itr++;
     *o_itr = malloc(sizeof(struct Option));
     **o_itr = (struct Option){.name="Ponder", .check=0, .string="", .spin=0};
+    o_itr++;
+    *o_itr = malloc(sizeof(struct Option));
+    **o_itr = (struct Option){.name="SearchMemory", .check=0, .string="", .spin=256};
     o_itr++;
     *o_itr = 0;
 }

@@ -117,7 +117,7 @@ void *go_worker(void *argument) {
             my_node = root;
 
             //Keep searching until our node has no children
-            while (my_node->children) {
+            while (my_node->child_count > 0) {
                 //Navigate to a worthy child by considering variables:
                 //1) Total nodes visited
                 //2) Each child eval

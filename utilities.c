@@ -41,7 +41,7 @@ char **m_tokenize_input(char *input, size_t input_size) {
         ret_val[i] = strtok(NULL, " ");
     }
     ret_val[space_count+1] = NULL;
-    print_tokenized_input(ret_val);
+    //print_tokenized_input(ret_val);
     return ret_val;
 }
 
