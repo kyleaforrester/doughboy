@@ -34,7 +34,7 @@ double evaluate(struct Board board) {
     opponent_score += evaluate_rooks(board, opponent_color);
     opponent_score += evaluate_queens(board, opponent_color);
     
-    total_score = my_score - opponent_score;
+    total_score = (my_score - opponent_score)*100;
 
     //Convert centipawn score to 0-1 win percentage
     if (total_score > 0) {
