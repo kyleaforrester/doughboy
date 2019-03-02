@@ -3,6 +3,10 @@ double white_pawn_evals[64] = {0.74,0.92,0.92,0.92,0.92,0.92,0.92,0.74,0.80,1.00
 
 double black_pawn_evals[64] = {1.30,1.63,1.63,1.63,1.63,1.63,1.63,1.30,2.20,2.50,2.50,2.50,2.50,2.50,2.50,2.20,1.11,1.38,1.38,1.38,1.38,1.38,1.38,1.11,1.02,1.28,1.28,1.28,1.28,1.28,1.28,1.02,0.94,1.18,1.18,1.18,1.18,1.18,1.18,0.94,0.87,1.08,1.08,1.08,1.08,1.08,1.08,0.87,0.80,1.00,1.00,1.00,1.00,1.00,1.00,0.80,0.74,0.92,0.92,0.92,0.92,0.92,0.92,0.74};
 
+double dummy_eval(struct Board board) {
+    return 0.5;
+}
+
 double evaluate(struct Board board) {
     struct Node my_node, *min_child, *max_child, **child_itr;
     int my_move, i;
@@ -75,7 +79,8 @@ double evaluate_board(struct Board board) {
     //Knight = 3
     //Pawn = 1, but ramping up as move along the board
     double my_score = 0, opponent_score = 0, total_score;
-    int my_color, opponent_color;
+    int my_color, opponent_color, i;
+    struct Node my_node, enemy_node;
 
     if (board.halfmove_clock == 100) {
         return 0.5;
@@ -90,6 +95,16 @@ double evaluate_board(struct Board board) {
         opponent_color = 1;
     }
 
+    my_node.board = board;
+    enemy_node.board = board;
+    enemy_node.board.white_moves = opponent_color;
+
+    m_bloom_node(&my_node, &dummy_eval);
+    m_bloom_node(&enemy_node, &dummy_eval);
+
+    my_score += my_node.child_count / 20;
+    opponent_score += enemy_node.child_count / 20;
+
     my_score += evaluate_pawns(board, my_color);
     my_score += evaluate_knights(board, my_color);
     my_score += evaluate_bishops(board, my_color);
@@ -101,8 +116,17 @@ double evaluate_board(struct Board board) {
     opponent_score += evaluate_bishops(board, opponent_color);
     opponent_score += evaluate_rooks(board, opponent_color);
     opponent_score += evaluate_queens(board, opponent_color);
-    
+
     total_score = (my_score - opponent_score)*100;
+
+    for (i = 0; i < my_node.child_count; i++) {
+        free_node(my_node.children[i]);
+    }
+    free(my_node.children);
+    for (i = 0; i < enemy_node.child_count; i++) {
+        free_node(enemy_node.children[i]);
+    }
+    free(enemy_node.children);
 
     //Convert centipawn score to 0-1 win percentage
     if (total_score > 0) {
