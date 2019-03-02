@@ -4,6 +4,70 @@ double white_pawn_evals[64] = {0.64,0.80,0.80,0.80,0.80,0.80,0.80,0.64,0.80,1.00
 double black_pawn_evals[64] = {2.99,3.74,3.74,3.74,3.74,3.74,3.74,2.99,2.40,3.00,3.00,3.00,3.00,3.00,3.00,2.40,1.93,2.41,2.41,2.41,2.41,2.41,2.41,1.93,1.55,1.93,1.93,1.93,1.93,1.93,1.93,1.55,1.24,1.55,1.55,1.55,1.55,1.55,1.55,1.24,1.00,1.25,1.25,1.25,1.25,1.25,1.25,1.00,0.80,1.00,1.00,1.00,1.00,1.00,1.00,0.80,0.64,0.80,0.80,0.80,0.80,0.80,0.80,0.64};
 
 double evaluate(struct Board board) {
+    struct Node my_node, *min_child, *max_child, **child_itr;
+    int my_move, i;
+    double ret_val;
+
+    my_node.board = board;
+    my_node.visits = 0;
+    my_node.depth = 0;
+    my_node.height = 0;
+    my_node.eval = 0.5;
+    my_node.is_checkmate = 0;
+    my_node.is_stalemate = 0;
+    my_node.children = NULL;
+    my_node.child_count = 0;
+    my_node.parent = NULL;
+    m_bloom_node(&my_node, &evaluate_board);
+
+    if (root->board.white_moves == board.white_moves) {
+        my_move = 1;
+    }
+    else {
+        my_move = 0;
+    }
+
+    if (my_node.is_checkmate) {
+        if (my_move) {
+            return 0;
+        }
+        else {
+            return 1;
+        }
+    }
+
+    if (my_node.is_stalemate) {
+        return 0.5;
+    }
+
+    //Iterate through children and find min and max children
+    min_child = *(my_node.children);
+    max_child = min_child;
+    for (child_itr = my_node.children; *child_itr; child_itr++) {
+        if ((*child_itr)->eval > max_child->eval) {
+            max_child = *child_itr;
+        }
+        if ((*child_itr)->eval < min_child->eval) {
+            min_child = *child_itr;
+        }
+    }
+
+    if (my_move) {
+        ret_val = max_child->eval;
+    }
+    else {
+        ret_val = min_child->eval;
+    }
+
+    for (i = 0; i < my_node.child_count; i++) {
+        free_node(my_node.children[i]);
+    }
+    free(my_node.children);
+    
+    return ret_val;
+}
+
+double evaluate_board(struct Board board) {
     //Count the basic material of both sides
     //Queen = 9
     //Rook = 5
@@ -12,6 +76,10 @@ double evaluate(struct Board board) {
     //Pawn = 1, but ramping up as move along the board
     double my_score = 0, opponent_score = 0, total_score;
     int my_color, opponent_color;
+
+    if (board.halfmove_clock == 100) {
+        return 0.5;
+    }
 
     if (root->board.white_moves) {
         my_color = 1;   

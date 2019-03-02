@@ -115,14 +115,14 @@ void initialize_board();
 int main(int argc, char **argv);
 
 //move_gen.c
-int m_bloom_node(struct Node *node);
-struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t lsb_moves, char transform);
-int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
-int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
-int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
-int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
-int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
-int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, struct Node *node, int children_count);
+int m_bloom_node(struct Node *node, double (*eval_func)(struct Board board));
+struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t lsb_moves, char transform, double (*eval_func)(struct Board board));
+int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board));
+int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board));
+int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board));
+int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board));
+int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board));
+int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board));
 struct Node *m_spawn_child(struct Node *node);
 int clear_destination_square(struct Board *board, uint64_t square);
 int are_spaces_occupied(struct Board board, uint64_t spaces);
@@ -157,6 +157,7 @@ uint64_t get_nanos();
 
 //basic_eval.c
 double evaluate(struct Board board);
+double evaluate_board(struct Board board);
 double evaluate_pawns(struct Board board, int color);
 double evaluate_knights(struct Board board, int color);
 double evaluate_bishops(struct Board board, int color);

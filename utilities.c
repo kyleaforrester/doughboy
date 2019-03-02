@@ -43,18 +43,33 @@ void print_tokenized_input(char **input) {
 }
 
 char **m_tokenize_input(char *input, size_t input_size) {
-    char *temp = malloc(sizeof(char) * input_size);
-    strcpy(temp, input);
-    int space_count = char_count(temp, strlen(temp), ' ');
+    int space_count = char_count(input, input_size, ' ');
+    int start = 0, end = 0, creations = 0, i;
+    printf("space_count: %d\n", space_count);
     char **ret_val = malloc(sizeof(char *) * (space_count+2));
 
-    int i = 0;
-    ret_val[i] = strtok(temp, " ");
-    while (ret_val[i] != NULL && i < space_count) {
-        i++;
-        ret_val[i] = strtok(NULL, " ");
+    while (start < input_size && input[start] && creations < space_count + 1) {
+        while (start < input_size && input[start] && input[start] == ' ') {
+            start++;
+        }
+
+        end = start;
+        while (end < input_size && input[end] && input[end] != ' ') {
+            end++;
+        }
+
+        ret_val[creations] = malloc(sizeof(char) * (1 + (end - start)));
+
+        for (i = 0; i < (end - start); i++) {
+            ret_val[creations][i] = input[start + i];
+        }
+        ret_val[creations][i] = '\0';
+        //printf("Created string %s\n", ret_val[creations]);
+        creations++;
+        start = end;
     }
-    ret_val[space_count+1] = NULL;
+    ret_val[creations] = NULL;
+
     //print_tokenized_input(ret_val);
     return ret_val;
 }
@@ -72,7 +87,11 @@ void strip_line_endings(char *input, size_t input_size) {
 }
 
 void free_tokenize_input(char **input) {
-    free(*input);
+    char ** input_itr;
+
+    for (input_itr = input; *input_itr; input_itr++) {
+        free(*input_itr);
+    }
     free(input);
 }
 

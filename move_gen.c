@@ -1,7 +1,7 @@
 
 
 
-int m_bloom_node(struct Node *node) {
+int m_bloom_node(struct Node *node, double (*eval_func)(struct Board board)) {
     
     struct Board board = node->board;
     uint64_t bishops, rooks, knights, king, queens;
@@ -30,12 +30,12 @@ int m_bloom_node(struct Node *node) {
         enemy_pieces = board.bitboards[0] | board.bitboards[1] | board.bitboards[2] | board.bitboards[3] | board.bitboards[4] | board.bitboards[5];
     }
 
-    children_count += m_add_knight_moves(knights, ally_pieces, enemy_pieces, node, children_count);
-    children_count += m_add_bishop_moves(bishops, ally_pieces, enemy_pieces, node, children_count);
-    children_count += m_add_rook_moves(rooks, ally_pieces, enemy_pieces, node, children_count);
-    children_count += m_add_queen_moves(queens, ally_pieces, enemy_pieces, node, children_count);
-    children_count += m_add_king_moves(king, ally_pieces, enemy_pieces, node, children_count);
-    children_count += m_add_pawn_moves(ally_pieces, enemy_pieces, node, children_count);
+    children_count += m_add_knight_moves(knights, ally_pieces, enemy_pieces, node, children_count, eval_func);
+    children_count += m_add_bishop_moves(bishops, ally_pieces, enemy_pieces, node, children_count, eval_func);
+    children_count += m_add_rook_moves(rooks, ally_pieces, enemy_pieces, node, children_count, eval_func);
+    children_count += m_add_queen_moves(queens, ally_pieces, enemy_pieces, node, children_count, eval_func);
+    children_count += m_add_king_moves(king, ally_pieces, enemy_pieces, node, children_count, eval_func);
+    children_count += m_add_pawn_moves(ally_pieces, enemy_pieces, node, children_count, eval_func);
 
     node->child_count = children_count;
 
@@ -67,7 +67,7 @@ int m_bloom_node(struct Node *node) {
     return children_count;
 }
 
-struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t lsb_moves, char transform) {
+struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t lsb_moves, char transform, double (*eval_func)(struct Board board)) {
     struct Node *child;
     int captures, old_index, new_index;
 
@@ -167,7 +167,7 @@ struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t l
     child->board.fullmove_clock += 1;
 
     //Evaluate position
-    child->eval = evaluate(child->board);
+    child->eval = (*eval_func)(child->board);
 
     //Set child's last_move
     old_index = LSB(lsb_pawn);
@@ -187,7 +187,7 @@ struct Node *m_spawn_pawn_child(struct Node *node, uint64_t lsb_pawn, uint64_t l
     return child;
 }
 
-int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board)) {
 
     struct Node *child;
     uint64_t pawns, lsb_pawn, lsb_moves, moves, king_location;
@@ -219,7 +219,7 @@ int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int c
                 for (iter = transformations; *iter && (created_children + children_count < MAX_CHILDREN - 1); iter++) {
 
                     //Create new Node
-                    child = m_spawn_pawn_child(node, lsb_pawn, lsb_moves, *iter);
+                    child = m_spawn_pawn_child(node, lsb_pawn, lsb_moves, *iter, eval_func);
 
                     //Check for checks
                     if (is_square_in_check(child->board, node->board.white_moves, child->board.bitboards[5])) {
@@ -260,7 +260,7 @@ int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int c
                 for (iter = transformations; *iter && (created_children + children_count < MAX_CHILDREN - 1); iter++) {
 
                     //Create new Node
-                    child = m_spawn_pawn_child(node, lsb_pawn, lsb_moves, *iter);
+                    child = m_spawn_pawn_child(node, lsb_pawn, lsb_moves, *iter, eval_func);
 
                     //Check for checks
                     if (is_square_in_check(child->board, node->board.white_moves, child->board.bitboards[11])) {
@@ -283,7 +283,7 @@ int m_add_pawn_moves(uint64_t allies, uint64_t enemies, struct Node *node, int c
     return created_children;
 }
 
-int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board)) {
 
     struct Node *child;
     uint64_t lsb_moves, moves, king_location, castle_occupations;
@@ -362,7 +362,7 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
         child->board.fullmove_clock += 1;
 
         //Evaluate position
-        child->eval = evaluate(child->board);
+        child->eval = (*eval_func)(child->board);
 
         //Set child's last_move
         old_index = LSB(king);
@@ -403,7 +403,7 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
                 child->board.fullmove_clock += 1;
                 child->board.white_king_castle = 0;
                 child->board.white_queen_castle = 0;
-                child->eval = evaluate(child->board);
+                child->eval = (*eval_func)(child->board);
                 strcpy(child->last_move, "e1g1");
                 node->children[children_count + created_children] = child;
                 created_children += 1;
@@ -431,7 +431,7 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
                 child->board.fullmove_clock += 1;
                 child->board.white_king_castle = 0;
                 child->board.white_queen_castle = 0;
-                child->eval = evaluate(child->board);
+                child->eval = (*eval_func)(child->board);
                 strcpy(child->last_move, "e1c1");
                 node->children[children_count + created_children] = child;
                 created_children += 1;
@@ -462,7 +462,7 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
                 child->board.fullmove_clock += 1;
                 child->board.black_king_castle = 0;
                 child->board.black_queen_castle = 0;
-                child->eval = evaluate(child->board);
+                child->eval = (*eval_func)(child->board);
                 strcpy(child->last_move, "e8g8");
                 node->children[children_count + created_children] = child;
                 created_children += 1;
@@ -490,7 +490,7 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
                 child->board.fullmove_clock += 1;
                 child->board.black_king_castle = 0;
                 child->board.black_queen_castle = 0;
-                child->eval = evaluate(child->board);
+                child->eval = (*eval_func)(child->board);
                 strcpy(child->last_move, "e8c8");
                 node->children[children_count + created_children] = child;
                 created_children += 1;
@@ -504,7 +504,7 @@ int m_add_king_moves(uint64_t king, uint64_t allies, uint64_t enemies, struct No
     return created_children;
 }
 
-int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board)) {
 
     struct Node *child;
     uint64_t lsb_queen, lsb_moves, moves, king_location;
@@ -579,7 +579,7 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
             child->board.fullmove_clock += 1;
 
             //Evaluate position
-            child->eval = evaluate(child->board);
+            child->eval = (*eval_func)(child->board);
 
             //Set child's last_move
             old_index = LSB(lsb_queen);
@@ -602,7 +602,7 @@ int m_add_queen_moves(uint64_t queens, uint64_t allies, uint64_t enemies, struct
     return created_children;
 }
 
-int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board)) {
 
     struct Node *child;
     uint64_t lsb_rook, lsb_moves, moves, king_location;
@@ -692,7 +692,7 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
             child->board.fullmove_clock += 1;
 
             //Evaluate position
-            child->eval = evaluate(child->board);
+            child->eval = (*eval_func)(child->board);
 
             //Set child's last_move
             old_index = LSB(lsb_rook);
@@ -715,7 +715,7 @@ int m_add_rook_moves(uint64_t rooks, uint64_t allies, uint64_t enemies, struct N
     return created_children;
 }
 
-int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board)) {
 
     struct Node *child;
     uint64_t lsb_bishop, lsb_moves, moves, king_location;
@@ -789,7 +789,7 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
             child->board.fullmove_clock += 1;
 
             //Evaluate position
-            child->eval = evaluate(child->board);
+            child->eval = (*eval_func)(child->board);
 
             //Set child's last_move
             old_index = LSB(lsb_bishop);
@@ -812,7 +812,7 @@ int m_add_bishop_moves(uint64_t bishops, uint64_t allies, uint64_t enemies, stru
     return created_children;
 }
 
-int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, struct Node *node, int children_count) {
+int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, struct Node *node, int children_count, double (*eval_func)(struct Board board)) {
 
     struct Node *child;
     uint64_t lsb_knight, lsb_moves, moves, king_location;
@@ -886,7 +886,7 @@ int m_add_knight_moves(uint64_t knights, uint64_t allies, uint64_t enemies, stru
             child->board.fullmove_clock += 1;
 
             //Evaluate position
-            child->eval = evaluate(child->board);
+            child->eval = (*eval_func)(child->board);
 
             //Set child's last_move
             old_index = LSB(lsb_knight);

@@ -143,7 +143,7 @@ void *go_worker(void *argument) {
 
         if (is_lock_acquired) {
             //Bloom the leaf node
-            m_bloom_node(my_node);
+            m_bloom_node(my_node, &evaluate);
 
             //Push the new nodes' values from the parents all the way to root
             collapse_values(my_node);
