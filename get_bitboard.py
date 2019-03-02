@@ -427,17 +427,21 @@ def basic_eval_pawn_tables(is_white):
     if (is_white):
         for i in range(64):
             row = math.floor(i/8)
+            value = 1.5**((row - 1)/5)
             if (i%8 == 0 or i%8 == 7):
-                print('{0:.2f}'.format(3**((row - 1)/5) * edge_penalty), end=',')
-            else:
-                print('{0:.2f}'.format(3**((row - 1)/5)), end=',')
+                value = value * edge_penalty
+            if (row == 6):
+                value += 1
+            print('{0:.2f}'.format(value), end=',')
     else:
         for i in range(64):
             row = math.floor(i/8)
+            value = 1.5**((6 - row)/5)
             if (i%8 == 0 or i%8 == 7):
-                print('{0:.2f}'.format(3**((6 - row)/5) * edge_penalty), end=',')
-            else:
-                print('{0:.2f}'.format(3**((6 - row)/5)), end=',')
+                value = value * edge_penalty
+            if (row == 1):
+                value += 1
+            print('{0:.2f}'.format(value), end=',')
 
 def table_translate_lsb_index_my_index():
     for y in range(8):

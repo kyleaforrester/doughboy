@@ -45,7 +45,6 @@ void print_tokenized_input(char **input) {
 char **m_tokenize_input(char *input, size_t input_size) {
     int space_count = char_count(input, input_size, ' ');
     int start = 0, end = 0, creations = 0, i;
-    printf("space_count: %d\n", space_count);
     char **ret_val = malloc(sizeof(char *) * (space_count+2));
 
     while (start < input_size && input[start] && creations < space_count + 1) {
