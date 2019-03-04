@@ -95,6 +95,7 @@ double evaluate_board(struct Board board) {
         opponent_color = 1;
     }
 
+    /*
     my_node.board = board;
     enemy_node.board = board;
     enemy_node.board.white_moves = opponent_color;
@@ -102,8 +103,9 @@ double evaluate_board(struct Board board) {
     m_bloom_node(&my_node, &dummy_eval);
     m_bloom_node(&enemy_node, &dummy_eval);
 
-    my_score += my_node.child_count / 20;
-    opponent_score += enemy_node.child_count / 20;
+    my_score += my_node.child_count / 50;
+    opponent_score += enemy_node.child_count / 50;
+    */
 
     my_score += evaluate_pawns(board, my_color);
     my_score += evaluate_knights(board, my_color);
@@ -119,6 +121,7 @@ double evaluate_board(struct Board board) {
 
     total_score = (my_score - opponent_score)*100;
 
+    /*
     for (i = 0; i < my_node.child_count; i++) {
         free_node(my_node.children[i]);
     }
@@ -127,6 +130,7 @@ double evaluate_board(struct Board board) {
         free_node(enemy_node.children[i]);
     }
     free(enemy_node.children);
+    */
 
     //Convert centipawn score to 0-1 win percentage
     if (total_score > 0) {

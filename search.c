@@ -28,14 +28,15 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
         min_child = *(node_itr->children);
         max_child = min_child;
         for (child_itr = node_itr->children; *child_itr; child_itr++) {
-            if ((*child_itr)->eval > max_child->eval) {
+            if ((*child_itr)->visits > max_child->visits) {
                 max_child = *child_itr;
             }
-            if ((*child_itr)->eval < min_child->eval) {
+            if ((*child_itr)->visits < min_child->visits) {
                 min_child = *child_itr;
             }
         }
 
+        /*
         //It is my move!
         //Get the Max child node
         if (node_itr->height % 2 == 0) {
@@ -48,6 +49,9 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
             strcat(buffer, min_child->last_move);
             node_itr = min_child;
         }
+        */
+        strcat(buffer, max_child->last_move);
+        node_itr = max_child;
     }
 
     return 0;
@@ -82,11 +86,11 @@ void *go_worker(void *argument) {
         //I don't care about opponent's time management situation
         //I am white
         if (root->board.white_moves) {
-            search_time_nanos = (((args.wtime - 1000)/args.movestogo) + args.winc)*1000000L;
+            search_time_nanos = (((args.wtime - 10000)/args.movestogo) + args.winc)*1000000L;
         }
         //I am black
         else {
-            search_time_nanos = (((args.btime - 1000)/args.movestogo) + args.binc)*1000000L;
+            search_time_nanos = (((args.btime - 10000)/args.movestogo) + args.binc)*1000000L;
         }
 
         //If movetime was specified, use exactly that amount
@@ -177,7 +181,7 @@ void *go_worker(void *argument) {
                 else {
                     eval_display = 0;
                 }
-                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, 1, 0, (curr_time-start_time)/(1000000L), pv);
+                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, (int)(root->visits / (double)((double)(1+curr_time-start_time)/1000000000L)), 0, (curr_time-start_time)/(1000000L), pv);
                 fflush(stdout);
                 pv[0] = 0;
             }
@@ -201,25 +205,36 @@ void *go_worker(void *argument) {
 }
 
 struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
-    double soft_max_sum = 0;
+    double soft_max_sum = 0, iteration_chance;
     struct Node *child_iter;
     double soft_max_scores[MAX_CHILDREN];
-    int i, child_found = 0;
+    int i, child_found = 0, my_move;
 
+    my_move = 1 - parent->height % 2;
     //Calculate softmax for each child and store sum
     for (i = 0; i < parent->child_count; i++) {
         child_iter = parent->children[i];
-        soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(child_iter->visits + 2);
-        soft_max_scores[i] *= soft_max_scores[i];
+        //soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(child_iter->visits + 2);
+        //It is my move!
+        if (my_move) {
+            soft_max_scores[i] = pow(100, 10 * child_iter->eval);
+        }
+        else {
+            //Opponent's move!
+            soft_max_scores[i] = pow(100, 10 * (1 - child_iter->eval));
+        }
+        //soft_max_scores[i] *= soft_max_scores[i];
         soft_max_sum += soft_max_scores[i];
     }
 
     //Iterate through moves until a child's percentage is hit
+    iteration_chance = 1;
     for (i = 0; i < parent->child_count - 1; i++) {
-        if ((double)spcg32(prng_state) / (double)0x100000000ULL <= soft_max_scores[i] / soft_max_sum) {
+        if ((double)spcg32(prng_state) / (double)4294967295 <= soft_max_scores[i] / (soft_max_sum * iteration_chance)) {
             //Child found!
             return parent->children[i];
         }
+        iteration_chance *= 1 - (soft_max_scores[i] / (soft_max_sum * iteration_chance));
     }
 
     //No child was found so far.  Therefore we send the last child!
