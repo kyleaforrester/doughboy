@@ -33,10 +33,10 @@ double evaluate(struct Board board) {
 
     if (my_node.is_checkmate) {
         if (my_move) {
-            return 0;
+            return 0.01;
         }
         else {
-            return 1;
+            return 0.99;
         }
     }
 
@@ -71,6 +71,105 @@ double evaluate(struct Board board) {
     return ret_val;
 }
 
+double knight_score(uint64_t knights, uint64_t allies, uint64_t enemies) {
+    uint64_t lsb_knight, moves;
+    double score = 0;
+
+    //Loop for each knight
+    for (; knights; knights &= knights - 1) {
+        lsb_knight = knights & (~knights + 1);
+        moves = solo_knight_moves(lsb_knight, allies);
+
+        score += bit_count(moves);
+    }
+
+    return score;
+}
+
+double bishop_score(uint64_t bishops, uint64_t allies, uint64_t enemies) {
+    uint64_t lsb_bishop, moves;
+    double score = 0;
+
+    //Loop for each bishop
+    for (; bishops; bishops &= bishops - 1) {
+        lsb_bishop = bishops & (~bishops + 1);
+        moves = solo_bishop_moves(lsb_bishop, allies, allies | enemies);
+
+        score += bit_count(moves);
+    }
+
+    return score;
+
+}
+
+double rook_score(uint64_t rooks, uint64_t allies, uint64_t enemies) {
+    uint64_t lsb_rook, moves;
+    double score = 0;
+
+    //Loop for each rook
+    for (; rooks; rooks &= rooks - 1) {
+        lsb_rook = rooks & (~rooks + 1);
+        moves = solo_rook_moves(lsb_rook, allies, allies | enemies);
+
+        score += bit_count(moves);
+    }
+
+    return score;
+
+}
+
+double queen_score(uint64_t queens, uint64_t allies, uint64_t enemies) {
+    uint64_t lsb_queen, moves;
+    double score = 0;
+
+    //Loop for each queen
+    for (; queens; queens &= queens - 1) {
+        lsb_queen = queens & (~queens + 1);
+        moves = solo_bishop_moves(lsb_queen, allies, allies | enemies);
+        moves |= solo_rook_moves(lsb_queen, allies, allies | enemies);
+
+        score += bit_count(moves);
+    }
+
+    return score;
+
+}
+
+
+double mobility_score(struct Board board, int color) {
+    double score = 0;
+    uint64_t bishops, rooks, knights, king, queens;
+    uint64_t all_pieces, ally_pieces, enemy_pieces;
+
+    if (color) {
+        knights = board.bitboards[1];
+        bishops = board.bitboards[2];
+        rooks = board.bitboards[3];
+        queens = board.bitboards[4];
+        king = board.bitboards[5];
+
+        ally_pieces = board.bitboards[0] | knights | bishops | rooks | queens | king;
+        enemy_pieces = board.bitboards[6] | board.bitboards[7] | board.bitboards[8] | board.bitboards[9] | board.bitboards[10] | board.bitboards[11];
+    }
+    else {
+        knights = board.bitboards[7];
+        bishops = board.bitboards[8];
+        rooks = board.bitboards[9];
+        queens = board.bitboards[10];
+        king = board.bitboards[11];
+
+        ally_pieces = board.bitboards[6] | knights | bishops | rooks | queens | king;
+        enemy_pieces = board.bitboards[0] | board.bitboards[1] | board.bitboards[2] | board.bitboards[3] | board.bitboards[4] | board.bitboards[5];
+    }
+
+    score += knight_score(knights, ally_pieces, enemy_pieces);
+    score += bishop_score(bishops, ally_pieces, enemy_pieces);
+    score += rook_score(rooks, ally_pieces, enemy_pieces);
+    score += queen_score(rooks, ally_pieces, enemy_pieces);
+
+    return score;
+}
+
 double evaluate_board(struct Board board) {
     //Count the basic material of both sides
     //Queen = 9
@@ -95,17 +194,8 @@ double evaluate_board(struct Board board) {
         opponent_color = 1;
     }
 
-    /*
-    my_node.board = board;
-    enemy_node.board = board;
-    enemy_node.board.white_moves = opponent_color;
-
-    m_bloom_node(&my_node, &dummy_eval);
-    m_bloom_node(&enemy_node, &dummy_eval);
-
-    my_score += my_node.child_count / 50;
-    opponent_score += enemy_node.child_count / 50;
-    */
+    my_score += mobility_score(board, my_color) / 40;
+    opponent_score += mobility_score(board, opponent_color) / 40;
 
     my_score += evaluate_pawns(board, my_color);
     my_score += evaluate_knights(board, my_color);

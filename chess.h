@@ -163,3 +163,5 @@ double evaluate_knights(struct Board board, int color);
 double evaluate_bishops(struct Board board, int color);
 double evaluate_rooks(struct Board board, int color);
 double evaluate_queens(struct Board board, int color);
+double mobility_score(struct Board board, int color);
+
