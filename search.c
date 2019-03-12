@@ -115,7 +115,7 @@ void *go_worker(void *argument) {
                 2) Depth is exhausted
                 3) Nodes is exhausted
                 */
-                if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos && args.wtime && args.btime) || (root->depth >= args.depth && args.depth) || (root->visits >= args.nodes && args.nodes))) {
+                if (!args.infinite && !args.ponder && ((curr_time - start_time > search_time_nanos && ((args.wtime && args.btime) || args.movetime)) || (root->depth >= args.depth && args.depth) || (root->visits >= args.nodes && args.nodes))) {
                     //Stop all searching
                     stop_pondering = 1;
                 }
@@ -217,11 +217,11 @@ struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
         //soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(child_iter->visits + 2);
         //It is my move!
         if (my_move) {
-            soft_max_scores[i] = pow(100, 10 * child_iter->eval);
+            soft_max_scores[i] = pow(4, 10 * child_iter->eval);
         }
         else {
             //Opponent's move!
-            soft_max_scores[i] = pow(100, 10 * (1 - child_iter->eval));
+            soft_max_scores[i] = pow(4, 10 * (1 - child_iter->eval));
         }
         //soft_max_scores[i] *= soft_max_scores[i];
         soft_max_sum += soft_max_scores[i];
