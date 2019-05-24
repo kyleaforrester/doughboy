@@ -217,13 +217,14 @@ struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
         //soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(child_iter->visits + 2);
         //It is my move!
         if (my_move) {
-            soft_max_scores[i] = pow(4, 10 * child_iter->eval);
+            soft_max_scores[i] = child_iter->eval + sqrt(log(parent->visits) / child_iter->visits);
         }
         else {
             //Opponent's move!
-            soft_max_scores[i] = pow(4, 10 * (1 - child_iter->eval));
+            soft_max_scores[i] = (1 - child_iter->eval) + sqrt(log(parent->visits) / child_iter->visits);
         }
         //soft_max_scores[i] *= soft_max_scores[i];
+        soft_max_scores[i] = pow(1000, soft_max_scores[i]);
         soft_max_sum += soft_max_scores[i];
     }
 
