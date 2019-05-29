@@ -39,7 +39,7 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
         /*
         //It is my move!
         //Get the Max child node
-        if (node_itr->height % 2 == 0) {
+        if (root->board.white_moves == node_itr->board.white_moves) {
             strcat(buffer, max_child->last_move);
             node_itr = max_child;
         }
@@ -50,6 +50,7 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
             node_itr = min_child;
         }
         */
+
         strcat(buffer, max_child->last_move);
         node_itr = max_child;
     }
@@ -64,10 +65,10 @@ void *go_worker(void *argument) {
     struct Go_Args args = *((struct Go_Args *)argument);
     struct Node *my_node;
     uint64_t start_time = get_nanos(), curr_time;
-    uint64_t search_time_nanos;
+    uint64_t search_time_nanos, last_print_time = start_time;
     //Seed with random number, diff for each thread
     uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084dULL);
-    int curr_depth = 0, eval_display, is_lock_acquired, recursion = 3;
+    int eval_display, is_lock_acquired, recursion = 3;
     char pv[MAX_BUF_SIZE];
     char **tokens;
     double temp_eval;
@@ -159,9 +160,9 @@ void *go_worker(void *argument) {
         //Managerial duties for the manager thread = 0
         if (args.index == 0) {
             //Print out depth information if new depth is reached
-            if (root->depth > curr_depth) {
-                curr_time = get_nanos();
-                curr_depth = root->depth;
+            curr_time = get_nanos();
+            if (curr_time > last_print_time + 2000000000L) {
+                last_print_time = curr_time;
                 get_pv(root, pv, sizeof(pv));
                 //Display cp version of eval
                 //Remember eval is a double between 0 and 1
@@ -181,7 +182,7 @@ void *go_worker(void *argument) {
                 else {
                     eval_display = 0;
                 }
-                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", curr_depth, curr_depth, 1, eval_display, root->visits, (int)(root->visits / (double)((double)(1+curr_time-start_time)/1000000000L)), 0, (curr_time-start_time)/(1000000L), pv);
+                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", root->depth, root->depth, 1, eval_display, root->visits, (int)(root->visits / (double)((double)(1+curr_time-start_time)/1000000000L)), 0, (curr_time-start_time)/(1000000L), pv);
                 fflush(stdout);
                 pv[0] = 0;
             }
