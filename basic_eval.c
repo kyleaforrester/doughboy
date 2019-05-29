@@ -1,74 +1,10 @@
 
-double white_pawn_evals[64] = {0.74,0.92,0.92,0.92,0.92,0.92,0.92,0.74,0.80,1.00,1.00,1.00,1.00,1.00,1.00,0.80,0.87,1.08,1.08,1.08,1.08,1.08,1.08,0.87,0.94,1.18,1.18,1.18,1.18,1.18,1.18,0.94,1.02,1.28,1.28,1.28,1.28,1.28,1.28,1.02,1.11,1.38,1.38,1.38,1.38,1.38,1.38,1.11,2.20,2.50,2.50,2.50,2.50,2.50,2.50,2.20,1.30,1.63,1.63,1.63,1.63,1.63,1.63,1.30};
+double white_pawn_evals[64] = {0.77,0.96,0.96,0.96,0.96,0.96,0.96,0.77,0.80,1.00,1.00,1.00,1.00,1.00,1.00,0.80,0.83,1.04,1.04,1.04,1.04,1.04,1.04,0.83,0.86,1.08,1.08,1.08,1.08,1.08,1.08,0.86,0.89,1.12,1.12,1.12,1.12,1.12,1.12,0.89,0.93,1.16,1.16,1.16,1.16,1.16,1.16,0.93,1.96,2.20,2.20,2.20,2.20,2.20,2.20,1.96,1.00,1.24,1.24,1.24,1.24,1.24,1.24,1.00};
 
-double black_pawn_evals[64] = {1.30,1.63,1.63,1.63,1.63,1.63,1.63,1.30,2.20,2.50,2.50,2.50,2.50,2.50,2.50,2.20,1.11,1.38,1.38,1.38,1.38,1.38,1.38,1.11,1.02,1.28,1.28,1.28,1.28,1.28,1.28,1.02,0.94,1.18,1.18,1.18,1.18,1.18,1.18,0.94,0.87,1.08,1.08,1.08,1.08,1.08,1.08,0.87,0.80,1.00,1.00,1.00,1.00,1.00,1.00,0.80,0.74,0.92,0.92,0.92,0.92,0.92,0.92,0.74};
+double black_pawn_evals[64] = {1.00,1.24,1.24,1.24,1.24,1.24,1.24,1.00,1.96,2.20,2.20,2.20,2.20,2.20,2.20,1.96,0.93,1.16,1.16,1.16,1.16,1.16,1.16,0.93,0.89,1.12,1.12,1.12,1.12,1.12,1.12,0.89,0.86,1.08,1.08,1.08,1.08,1.08,1.08,0.86,0.83,1.04,1.04,1.04,1.04,1.04,1.04,0.83,0.80,1.00,1.00,1.00,1.00,1.00,1.00,0.80,0.77,0.96,0.96,0.96,0.96,0.96,0.96,0.77};
 
 double dummy_eval(struct Board board) {
     return 0.5;
-}
-
-double evaluate(struct Board board) {
-    struct Node my_node, *min_child, *max_child, **child_itr;
-    int my_move, i;
-    double ret_val;
-
-    my_node.board = board;
-    my_node.visits = 0;
-    my_node.depth = 0;
-    my_node.height = 0;
-    my_node.eval = 0.5;
-    my_node.is_checkmate = 0;
-    my_node.is_stalemate = 0;
-    my_node.children = NULL;
-    my_node.child_count = 0;
-    my_node.parent = NULL;
-    m_bloom_node(&my_node, &evaluate_board);
-
-    if (root->board.white_moves == board.white_moves) {
-        my_move = 1;
-    }
-    else {
-        my_move = 0;
-    }
-
-    if (my_node.is_checkmate) {
-        if (my_move) {
-            return 0.01;
-        }
-        else {
-            return 0.99;
-        }
-    }
-
-    if (my_node.is_stalemate) {
-        return 0.5;
-    }
-
-    //Iterate through children and find min and max children
-    min_child = *(my_node.children);
-    max_child = min_child;
-    for (child_itr = my_node.children; *child_itr; child_itr++) {
-        if ((*child_itr)->eval > max_child->eval) {
-            max_child = *child_itr;
-        }
-        if ((*child_itr)->eval < min_child->eval) {
-            min_child = *child_itr;
-        }
-    }
-
-    if (my_move) {
-        ret_val = max_child->eval;
-    }
-    else {
-        ret_val = min_child->eval;
-    }
-
-    for (i = 0; i < my_node.child_count; i++) {
-        free_node(my_node.children[i]);
-    }
-    free(my_node.children);
-    
-    return ret_val;
 }
 
 double knight_score(uint64_t knights, uint64_t allies, uint64_t enemies) {
@@ -78,7 +14,8 @@ double knight_score(uint64_t knights, uint64_t allies, uint64_t enemies) {
     //Loop for each knight
     for (; knights; knights &= knights - 1) {
         lsb_knight = knights & (~knights + 1);
-        moves = solo_knight_moves(lsb_knight, allies);
+        //Pretend the knight has no allies for this mobility score
+        moves = solo_knight_moves(lsb_knight, 0);
 
         score += bit_count(moves);
     }
@@ -93,7 +30,8 @@ double bishop_score(uint64_t bishops, uint64_t allies, uint64_t enemies) {
     //Loop for each bishop
     for (; bishops; bishops &= bishops - 1) {
         lsb_bishop = bishops & (~bishops + 1);
-        moves = solo_bishop_moves(lsb_bishop, allies, allies | enemies);
+        //Pretend the bishop has no allies for this mobility score
+        moves = solo_bishop_moves(lsb_bishop, 0, allies | enemies);
 
         score += bit_count(moves);
     }
@@ -109,7 +47,8 @@ double rook_score(uint64_t rooks, uint64_t allies, uint64_t enemies) {
     //Loop for each rook
     for (; rooks; rooks &= rooks - 1) {
         lsb_rook = rooks & (~rooks + 1);
-        moves = solo_rook_moves(lsb_rook, allies, allies | enemies);
+        //Pretend the rook has no allies for this mobility score
+        moves = solo_rook_moves(lsb_rook, 0, allies | enemies);
 
         score += bit_count(moves);
     }
@@ -125,8 +64,9 @@ double queen_score(uint64_t queens, uint64_t allies, uint64_t enemies) {
     //Loop for each queen
     for (; queens; queens &= queens - 1) {
         lsb_queen = queens & (~queens + 1);
-        moves = solo_bishop_moves(lsb_queen, allies, allies | enemies);
-        moves |= solo_rook_moves(lsb_queen, allies, allies | enemies);
+        //Pretend the queen has no allies for this mobility score
+        moves = solo_bishop_moves(lsb_queen, 0, allies | enemies);
+        moves |= solo_rook_moves(lsb_queen, 0, allies | enemies);
 
         score += bit_count(moves);
     }
@@ -134,7 +74,6 @@ double queen_score(uint64_t queens, uint64_t allies, uint64_t enemies) {
     return score;
 
 }
-
 
 double mobility_score(struct Board board, int color) {
     double score = 0;
@@ -162,75 +101,132 @@ double mobility_score(struct Board board, int color) {
         enemy_pieces = board.bitboards[0] | board.bitboards[1] | board.bitboards[2] | board.bitboards[3] | board.bitboards[4] | board.bitboards[5];
     }
 
-    score += knight_score(knights, ally_pieces, enemy_pieces);
-    score += bishop_score(bishops, ally_pieces, enemy_pieces);
+    score += 2*knight_score(knights, ally_pieces, enemy_pieces);
+    score += 2*bishop_score(bishops, ally_pieces, enemy_pieces);
     score += rook_score(rooks, ally_pieces, enemy_pieces);
-    score += queen_score(rooks, ally_pieces, enemy_pieces);
+    score += 0.5*queen_score(rooks, ally_pieces, enemy_pieces);
 
     return score;
 }
 
-double evaluate_board(struct Board board) {
-    //Count the basic material of both sides
-    //Queen = 9
-    //Rook = 5
-    //Bishop = 3
-    //Knight = 3
-    //Pawn = 1, but ramping up as move along the board
-    double my_score = 0, opponent_score = 0, total_score;
-    int my_color, opponent_color, i;
-    struct Node my_node, enemy_node;
+double evaluate(struct Board board, int recursion) {
 
-    if (board.halfmove_clock == 100) {
-        return 0.5;
-    }
+    //We are done recursing
+    if (recursion == 0) {
+        //Count the basic material of both sides
+        //Queen = 9
+        //Rook = 5
+        //Bishop = 3
+        //Knight = 3
+        //Pawn = 1, but ramping up as move along the board
+        double my_score = 0, opponent_score = 0, total_score;
+        int my_color, opponent_color, i;
 
-    if (root->board.white_moves) {
-        my_color = 1;   
-        opponent_color = 0;
+        if (board.halfmove_clock >= 100) {
+            return 0.5;
+        }
+
+        if (root->board.white_moves) {
+            my_color = 1;   
+            opponent_color = 0;
+        }
+        else {
+            my_color = 0;
+            opponent_color = 1;
+        }
+
+        my_score += mobility_score(board, my_color) / 40;
+        opponent_score += mobility_score(board, opponent_color) / 40;
+
+        my_score += evaluate_pawns(board, my_color);
+        my_score += evaluate_knights(board, my_color);
+        my_score += evaluate_bishops(board, my_color);
+        my_score += evaluate_rooks(board, my_color);
+        my_score += evaluate_queens(board, my_color);
+
+        opponent_score += evaluate_pawns(board, opponent_color);
+        opponent_score += evaluate_knights(board, opponent_color);
+        opponent_score += evaluate_bishops(board, opponent_color);
+        opponent_score += evaluate_rooks(board, opponent_color);
+        opponent_score += evaluate_queens(board, opponent_color);
+
+        total_score = (my_score - opponent_score)*100;
+
+        //Convert centipawn score to 0-1 win percentage
+        if (total_score > 0) {
+            return (total_score*total_score + 10000)/(total_score*total_score + 20000);
+        }
+        else if (total_score < 0) {
+            return 1 - (total_score*total_score + 10000)/(total_score*total_score + 20000);
+        }
+        else {
+            return 0.5;
+        }
     }
+    // We are still recursing!
     else {
-        my_color = 0;
-        opponent_color = 1;
-    }
+        struct Node my_node, *min_child, *max_child, **child_itr;
+        int my_move, i;
+        double ret_val;
 
-    my_score += mobility_score(board, my_color) / 40;
-    opponent_score += mobility_score(board, opponent_color) / 40;
+        my_node.board = board;
+        my_node.visits = 0;
+        my_node.depth = 0;
+        my_node.height = 0;
+        my_node.eval = 0.5;
+        my_node.is_checkmate = 0;
+        my_node.is_stalemate = 0;
+        my_node.children = NULL;
+        my_node.child_count = 0;
+        my_node.parent = NULL;
+        m_bloom_node(&my_node, recursion - 1);
 
-    my_score += evaluate_pawns(board, my_color);
-    my_score += evaluate_knights(board, my_color);
-    my_score += evaluate_bishops(board, my_color);
-    my_score += evaluate_rooks(board, my_color);
-    my_score += evaluate_queens(board, my_color);
+        if (root->board.white_moves == board.white_moves) {
+            my_move = 1;
+        }
+        else {
+            my_move = 0;
+        }
 
-    opponent_score += evaluate_pawns(board, opponent_color);
-    opponent_score += evaluate_knights(board, opponent_color);
-    opponent_score += evaluate_bishops(board, opponent_color);
-    opponent_score += evaluate_rooks(board, opponent_color);
-    opponent_score += evaluate_queens(board, opponent_color);
+        if (my_node.is_checkmate) {
+            if (my_move) {
+                return 0.01;
+            }
+            else {
+                return 0.99;
+            }
+        }
 
-    total_score = (my_score - opponent_score)*100;
+        if (my_node.is_stalemate) {
+            return 0.5;
+        }
 
-    /*
-    for (i = 0; i < my_node.child_count; i++) {
-        free_node(my_node.children[i]);
-    }
-    free(my_node.children);
-    for (i = 0; i < enemy_node.child_count; i++) {
-        free_node(enemy_node.children[i]);
-    }
-    free(enemy_node.children);
-    */
+        //Iterate through children and find min and max children
+        min_child = *(my_node.children);
+        max_child = min_child;
+        for (child_itr = my_node.children; *child_itr; child_itr++) {
+            if ((*child_itr)->eval > max_child->eval) {
+                max_child = *child_itr;
+            }
+            if ((*child_itr)->eval < min_child->eval) {
+                min_child = *child_itr;
+            }
+        }
 
-    //Convert centipawn score to 0-1 win percentage
-    if (total_score > 0) {
-        return (total_score*total_score + 10000)/(total_score*total_score + 20000);
-    }
-    else if (total_score < 0) {
-        return 1 - (total_score*total_score + 10000)/(total_score*total_score + 20000);
-    }
-    else {
-        return 0.5;
+        if (my_move) {
+            ret_val = max_child->eval;
+        }
+        else {
+            ret_val = min_child->eval;
+        }
+
+        for (i = 0; i < my_node.child_count; i++) {
+            free_node(my_node.children[i]);
+        }
+        free(my_node.children);
+
+        return ret_val;
+
     }
 
 }

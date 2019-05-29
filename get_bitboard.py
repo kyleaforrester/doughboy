@@ -427,7 +427,7 @@ def basic_eval_pawn_tables(is_white):
     if (is_white):
         for i in range(64):
             row = math.floor(i/8)
-            value = 1.5**((row - 1)/5)
+            value = 1.2**((row - 1)/5)
             if (i%8 == 0 or i%8 == 7):
                 value = value * edge_penalty
             if (row == 6):
@@ -436,7 +436,7 @@ def basic_eval_pawn_tables(is_white):
     else:
         for i in range(64):
             row = math.floor(i/8)
-            value = 1.5**((6 - row)/5)
+            value = 1.2**((6 - row)/5)
             if (i%8 == 0 or i%8 == 7):
                 value = value * edge_penalty
             if (row == 1):

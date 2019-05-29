@@ -67,7 +67,7 @@ void *go_worker(void *argument) {
     uint64_t search_time_nanos;
     //Seed with random number, diff for each thread
     uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084dULL);
-    int curr_depth = 0, eval_display, is_lock_acquired;
+    int curr_depth = 0, eval_display, is_lock_acquired, recursion = 3;
     char pv[MAX_BUF_SIZE];
     char **tokens;
     double temp_eval;
@@ -147,7 +147,7 @@ void *go_worker(void *argument) {
 
         if (is_lock_acquired) {
             //Bloom the leaf node
-            m_bloom_node(my_node, &evaluate);
+            m_bloom_node(my_node, recursion);
 
             //Push the new nodes' values from the parents all the way to root
             collapse_values(my_node);
