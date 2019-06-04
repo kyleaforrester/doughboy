@@ -3,6 +3,10 @@ double white_pawn_evals[64] = {0.77,0.96,0.96,0.96,0.96,0.96,0.96,0.77,0.80,1.00
 
 double black_pawn_evals[64] = {1.00,1.24,1.24,1.24,1.24,1.24,1.24,1.00,1.96,2.20,2.20,2.20,2.20,2.20,2.20,1.96,0.93,1.16,1.16,1.16,1.16,1.16,1.16,0.93,0.89,1.12,1.12,1.12,1.12,1.12,1.12,0.89,0.86,1.08,1.08,1.08,1.08,1.08,1.08,0.86,0.83,1.04,1.04,1.04,1.04,1.04,1.04,0.83,0.80,1.00,1.00,1.00,1.00,1.00,1.00,0.80,0.77,0.96,0.96,0.96,0.96,0.96,0.96,0.77};
 
+double mid_king_evals[64] = {4.00,3.70,2.30,2.00,2.00,2.30,3.70,4.00,3.70,3.40,2.00,1.70,1.70,2.00,3.40,3.70,2.30,2.00,0.60,0.30,0.30,0.60,2.00,2.30,2.00,1.70,0.30,0.00,0.00,0.30,1.70,2.00,2.00,1.70,0.30,0.00,0.00,0.30,1.70,2.00,2.30,2.00,0.60,0.30,0.30,0.60,2.00,2.30,3.70,3.40,2.00,1.70,1.70,2.00,3.40,3.70,4.00,3.70,2.30,2.00,2.00,2.30,3.70,4.00};
+
+double end_king_evals[64] = {0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00,0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00,0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00,0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00,0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00,0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00,0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00,0.00,0.10,0.30,0.40,0.40,0.30,0.10,0.00};
+
 double dummy_eval(struct Board board) {
     return 0.5;
 }
@@ -101,67 +105,110 @@ double mobility_score(struct Board board, int color) {
         enemy_pieces = board.bitboards[0] | board.bitboards[1] | board.bitboards[2] | board.bitboards[3] | board.bitboards[4] | board.bitboards[5];
     }
 
-    score += 2*knight_score(knights, ally_pieces, enemy_pieces);
+    score += 3*knight_score(knights, ally_pieces, enemy_pieces);
     score += 2*bishop_score(bishops, ally_pieces, enemy_pieces);
     score += rook_score(rooks, ally_pieces, enemy_pieces);
-    score += 0.5*queen_score(rooks, ally_pieces, enemy_pieces);
+    score += 0.2*queen_score(rooks, ally_pieces, enemy_pieces);
 
     return score;
+}
+
+double mid_game_king_eval(struct Board board, int color) {
+    double score;
+
+    if (color) {
+        //Evaluate for White
+        score = mid_king_evals[LSB(board.bitboards[5])];
+    }
+    else {
+        //Evaluate for Black
+        score = mid_king_evals[LSB(board.bitboards[11])];
+    }
+
+    return score;
+}
+
+double end_game_king_eval(struct Board board, int color) {
+    double score;
+
+    if (color) {
+        //Evaluate for White
+        score = end_king_evals[LSB(board.bitboards[5])];
+    }
+    else {
+        //Evaluate for Black
+        score = end_king_evals[LSB(board.bitboards[11])];
+    }
+
+    return score;
+
+}
+
+double mid_game_eval(struct Board board) {
+    //Count the basic material of both sides
+    //Queen = 9
+    //Rook = 5
+    //Bishop = 3
+    //Knight = 3
+    //Pawn = 1, but ramping up as move along the board
+    double my_score = 0, opponent_score = 0, total_score;
+    int my_color, opponent_color, i;
+
+    if (root->board.white_moves) {
+        my_color = 1;   
+        opponent_color = 0;
+    }
+    else {
+        my_color = 0;
+        opponent_color = 1;
+    }
+
+    my_score += mobility_score(board, my_color) / 40;
+    opponent_score += mobility_score(board, opponent_color) / 40;
+
+    my_score += evaluate_pawns(board, my_color);
+    my_score += evaluate_knights(board, my_color);
+    my_score += evaluate_bishops(board, my_color);
+    my_score += evaluate_rooks(board, my_color);
+    my_score += evaluate_queens(board, my_color);
+
+    opponent_score += evaluate_pawns(board, opponent_color);
+    opponent_score += evaluate_knights(board, opponent_color);
+    opponent_score += evaluate_bishops(board, opponent_color);
+    opponent_score += evaluate_rooks(board, opponent_color);
+    opponent_score += evaluate_queens(board, opponent_color);
+
+    my_score += mid_game_king_eval(board, my_color);
+    opponent_score += mid_game_king_eval(board, my_color);
+
+    total_score = (my_score - opponent_score)*100;
+
+    //Convert centipawn score to 0-1 win percentage
+    if (total_score > 0) {
+        return (total_score*total_score + 10000)/(total_score*total_score + 20000);
+    }
+    else if (total_score < 0) {
+        return 1 - (total_score*total_score + 10000)/(total_score*total_score + 20000);
+    }
+    else {
+        return 0.5;
+    }
+
+}
+
+double end_game_eval(struct Board board) {
+    return mid_game_eval(board);
+}
+
+double game_phase(struct Board board) {
+    return 0.5;
 }
 
 double evaluate(struct Board board, int recursion) {
 
     //We are done recursing
     if (recursion == 0) {
-        //Count the basic material of both sides
-        //Queen = 9
-        //Rook = 5
-        //Bishop = 3
-        //Knight = 3
-        //Pawn = 1, but ramping up as move along the board
-        double my_score = 0, opponent_score = 0, total_score;
-        int my_color, opponent_color, i;
-
-        if (board.halfmove_clock >= 100) {
-            return 0.5;
-        }
-
-        if (root->board.white_moves) {
-            my_color = 1;   
-            opponent_color = 0;
-        }
-        else {
-            my_color = 0;
-            opponent_color = 1;
-        }
-
-        my_score += mobility_score(board, my_color) / 40;
-        opponent_score += mobility_score(board, opponent_color) / 40;
-
-        my_score += evaluate_pawns(board, my_color);
-        my_score += evaluate_knights(board, my_color);
-        my_score += evaluate_bishops(board, my_color);
-        my_score += evaluate_rooks(board, my_color);
-        my_score += evaluate_queens(board, my_color);
-
-        opponent_score += evaluate_pawns(board, opponent_color);
-        opponent_score += evaluate_knights(board, opponent_color);
-        opponent_score += evaluate_bishops(board, opponent_color);
-        opponent_score += evaluate_rooks(board, opponent_color);
-        opponent_score += evaluate_queens(board, opponent_color);
-
-        total_score = (my_score - opponent_score)*100;
-
-        //Convert centipawn score to 0-1 win percentage
-        if (total_score > 0) {
-            return (total_score*total_score + 10000)/(total_score*total_score + 20000);
-        }
-        else if (total_score < 0) {
-            return 1 - (total_score*total_score + 10000)/(total_score*total_score + 20000);
-        }
-        else {
-            return 0.5;
-        }
+        return mid_game_eval(board);
     }
     // We are still recursing!
     else {

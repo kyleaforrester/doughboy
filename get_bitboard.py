@@ -443,6 +443,50 @@ def basic_eval_pawn_tables(is_white):
                 value += 1
             print('{0:.2f}'.format(value), end=',')
 
+def basic_eval_mid_king_tables():
+    for i in range(64):
+        row = math.floor(i/8)
+        col = i%8
+        value = 0
+
+        if (row == 0 or row == 7):
+            value += 2
+        elif (row == 1 or row == 6):
+            value += 1.7
+        elif (row == 2 or row == 5):
+            value += 0.3
+        elif (row == 3 or row == 4):
+            pass
+
+        if (col == 0 or col == 7):
+            value += 2
+        elif (col == 1 or col == 6):
+            value += 1.7
+        elif (col == 2 or col == 5):
+            value += 0.3
+        elif (col == 3 or col == 4):
+            pass
+
+        print('{0:.2f}'.format(value), end=',')
+
+def basic_eval_end_king_tables():
+    for i in range(64):
+        row = math.floor(i/8)
+        col = i%8
+        value = 0
+
+        if (col == 3 or col == 4):
+            value += 0.4
+        elif (col == 2 or col == 5):
+            value += 0.3
+        elif (col == 1 or col == 6):
+            value += 0.1
+
+        print('{0:.2f}'.format(value), end=',')
+
+    
+
+
 def table_translate_lsb_index_my_index():
     for y in range(8):
         for x in range(7, -1, -1):
