@@ -19,10 +19,7 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
     //The tree should be populated correctly depending on the user's move
     while (node_itr->child_count > 0) {
 
-        //Output a space except if it is the first entry
-        if (node_itr != r_node) {
-            strcat(buffer, " ");
-        }
+        strcat(buffer, " ");
 
         //Iterate through children and find min and max children
         min_child = *(node_itr->children);
@@ -56,6 +53,91 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size) {
     }
 
     return 0;
+}
+
+void merge(struct Node **left_sorted, size_t left_size, struct Node **right_sorted, size_t right_size, struct Node **sorted_nodes, size_t sorted_nodes_size) {
+    //a is for left_iter, b is for right_iter, c is for sorted_iter
+    int a = 0, b = 0, c = 0;
+
+    while (a < left_size && b < right_size) {
+        if (left_sorted[a]->visits >= right_sorted[b]->visits) {
+            //Pull from the left list
+            sorted_nodes[c] = left_sorted[a];
+            a++;
+            c++;
+        }
+        else {
+            //Pull from the right list
+            sorted_nodes[c] = right_sorted[b];
+            b++;
+            c++;
+        }
+    }
+
+    //Empty the remaining list into sorted_nodes
+    for (; a < left_size; a++) {
+        sorted_nodes[c] = left_sorted[a];
+        c++;
+    }
+    for (; b < right_size; b++) {
+        sorted_nodes[c] = right_sorted[b];
+        c++;
+    }
+
+}
+
+void sort_child_nodes_by_visits(struct Node **children, size_t child_count, struct Node **sorted_nodes, size_t sorted_nodes_size) {
+    //Left size rounds up, right size rounds down
+    int left_size = (int)((child_count + 1.1) / 2);
+    int right_size = (int)(child_count / 2);
+    int i;
+    struct Node *left_list[left_size], *right_list[right_size];
+    struct Node *left_sorted[left_size], *right_sorted[right_size];
+
+    //This is a Merge Sort!!
+    //Base case
+    if (child_count <= 1) {
+        for (i = 0; i < child_count; i++) {
+            sorted_nodes[i] = children[i];
+        }
+        return;
+    }
+
+    //Populate left and right lists
+    for (i = 0; i < left_size; i++) {
+        left_list[i] = children[i];
+    }
+    for (i = 0; i < right_size; i++) {
+        right_list[i] = children[i + left_size];
+    }
+    sort_child_nodes_by_visits(left_list, left_size, left_sorted, left_size);
+    sort_child_nodes_by_visits(right_list, right_size, right_sorted, right_size);
+    merge(left_sorted, left_size, right_sorted, right_size, sorted_nodes, sorted_nodes_size);
+
+}
+
+void print_multipv(struct Node *r_node, uint64_t curr_time, uint64_t start_time) {
+    struct Node *sorted_nodes[r_node->child_count];
+    struct Option **option_itr;
+    char pv[MAX_BUF_SIZE];
+    int multipv = 1, i;
+
+    //Check MultiPV Engine Option
+    for (option_itr = options; *option_itr; option_itr++) {
+        if (strcmp((*option_itr)->name, "MultiPV") == 0) {
+            multipv = (*option_itr)->spin;
+        }
+    }
+
+    sort_child_nodes_by_visits(r_node->children, r_node->child_count, sorted_nodes, r_node->child_count);
+
+    for (i = 0; i < multipv && i < r_node->child_count; i++, pv[0] = 0) {
+        strcat(pv, sorted_nodes[i]->last_move);
+        get_pv(sorted_nodes[i], pv, MAX_BUF_SIZE);
+        printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", sorted_nodes[i]->depth, sorted_nodes[i]->depth, i+1, eval_to_cp(sorted_nodes[i]->eval), sorted_nodes[i]->visits, (int)(r_node->visits / (double)((double)(1+curr_time-start_time)/1000000000L)), 0, (curr_time-start_time)/(1000000L), pv);
+        fflush(stdout);
+    }
+
 }
 
 void *go_worker(void *argument) {
@@ -163,34 +245,14 @@ void *go_worker(void *argument) {
             curr_time = get_nanos();
             if (curr_time > last_print_time + 2000000000L) {
                 last_print_time = curr_time;
-                get_pv(root, pv, sizeof(pv));
-                //Display cp version of eval
-                //Remember eval is a double between 0 and 1
-                if (root->eval > 0.5) {
-                    //We are winning
-                    temp_eval = sqrt((20000*root->eval - 10000)/(1 - root->eval));
-                    //Round to nearest int
-                    eval_display = (int) (temp_eval + 0.5);
-                }
-                else if (root->eval < 0.5) {
-                    //We are losing
-                    temp_eval = 1 - root->eval;
-                    temp_eval = sqrt((20000*temp_eval - 10000)/(1 - temp_eval));
-                    //Round to nearest int
-                    eval_display = (int) (-temp_eval - 0.5);
-                }
-                else {
-                    eval_display = 0;
-                }
-                printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", root->depth, root->depth, 1, eval_display, root->visits, (int)(root->visits / (double)((double)(1+curr_time-start_time)/1000000000L)), 0, (curr_time-start_time)/(1000000L), pv);
-                fflush(stdout);
-                pv[0] = 0;
+                print_multipv(root, curr_time, start_time);
             }
         }
     }
 
     //Manager thread prints information back to GUI
     if (args.index == 0) {
+        print_multipv(root, curr_time, start_time);
         get_pv(root, pv, sizeof(pv));
         tokens = m_tokenize_input(pv, strlen(pv));
         if (args.ponder_enabled) {
@@ -218,14 +280,16 @@ struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
         //soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(child_iter->visits + 2);
         //It is my move!
         if (my_move) {
-            soft_max_scores[i] = child_iter->eval + sqrt(log(parent->visits) / child_iter->visits);
+            //soft_max_scores[i] = child_iter->eval + sqrt(log(parent->visits) / child_iter->visits);
+            soft_max_scores[i] = child_iter->eval;
         }
         else {
             //Opponent's move!
-            soft_max_scores[i] = (1 - child_iter->eval) + sqrt(log(parent->visits) / child_iter->visits);
+            //soft_max_scores[i] = (1 - child_iter->eval) + sqrt(log(parent->visits) / child_iter->visits);
+            soft_max_scores[i] = 1 - child_iter->eval;
         }
         //soft_max_scores[i] *= soft_max_scores[i];
-        soft_max_scores[i] = pow(1000, soft_max_scores[i]);
+        soft_max_scores[i] = pow(2, 40*soft_max_scores[i]);
         soft_max_sum += soft_max_scores[i];
     }
 

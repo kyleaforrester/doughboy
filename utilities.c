@@ -132,3 +132,27 @@ uint64_t get_nanos() {
     clock_gettime(CLOCK_REALTIME, &ts);
     return (uint64_t)ts.tv_sec * 1000000000L + ts.tv_nsec;
 }
+
+//Converts win percentages to centipawn evaluations
+int eval_to_cp(double win_percent) {
+    double temp_eval;
+
+    //Display cp version of eval
+    //Remember eval is a double between 0 and 1
+    if (win_percent > 0.5) {
+        //We are winning
+        temp_eval = sqrt((20000*win_percent - 10000)/(1 - win_percent));
+        //Round to nearest int
+        return (int) (temp_eval + 0.5);
+    }
+    else if (win_percent < 0.5) {
+        //We are losing
+        temp_eval = 1 - win_percent;
+        temp_eval = sqrt((20000*temp_eval - 10000)/(1 - temp_eval));
+        //Round to nearest int
+        return (int) (-temp_eval - 0.5);
+    }
+    else {
+        return 0;
+    }
+}

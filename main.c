@@ -6,6 +6,7 @@ void parse_uci(char *buffer, size_t buf_size) {
     printf("option name Threads type spin default 1 min 1 max 128\n");
     printf("option name Ponder type check default false\n");
     printf("option name SearchMemory type spin default 256 min 16 max 8192\n");
+    printf("option name MultiPV type spin default 1 min 1 max 200\n");
     printf("uciok\n");
     return;
 }
@@ -40,6 +41,9 @@ void parse_setoption(char *buffer, size_t buf_size) {
                 }
             }
             else if (strcmp((*o_itr)->name, "SearchMemory") == 0) {
+                (*o_itr)->spin = atoi(parsed_string[4]);
+            }
+            else if (strcmp((*o_itr)->name, "MultiPV") == 0) {
                 (*o_itr)->spin = atoi(parsed_string[4]);
             }
         }
@@ -184,6 +188,9 @@ void parse_printoptions(char *buffer, size_t buf_size) {
         else if (strcmp((*o_itr)->name, "SearchMemory") == 0) {
             printf("SearchMemory: %d\n", (*o_itr)->spin);
         }
+        else if (strcmp((*o_itr)->name, "MultiPV") == 0) {
+            printf("MultiPV: %d\n", (*o_itr)->spin);
+        }
     }
 }
 
@@ -221,6 +228,9 @@ void initialize_options() {
     o_itr++;
     *o_itr = malloc(sizeof(struct Option));
     **o_itr = (struct Option){.name="SearchMemory", .check=0, .string="", .spin=256};
+    o_itr++;
+    *o_itr = malloc(sizeof(struct Option));
+    **o_itr = (struct Option){.name="MultiPV", .check=0, .string="", .spin=1};
     o_itr++;
     *o_itr = 0;
 }
