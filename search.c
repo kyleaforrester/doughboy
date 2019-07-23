@@ -150,7 +150,7 @@ void *go_worker(void *argument) {
     uint64_t search_time_nanos, last_print_time = start_time;
     //Seed with random number, diff for each thread
     uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084dULL);
-    int eval_display, is_lock_acquired, recursion = 3;
+    int eval_display, is_lock_acquired, recursion = 2;
     char pv[MAX_BUF_SIZE];
     char **tokens;
     double temp_eval;
@@ -289,7 +289,7 @@ struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
             soft_max_scores[i] = 1 - child_iter->eval;
         }
         //soft_max_scores[i] *= soft_max_scores[i];
-        soft_max_scores[i] = pow(2, 40*soft_max_scores[i]);
+        soft_max_scores[i] = pow(2, 20*soft_max_scores[i]);
         soft_max_sum += soft_max_scores[i];
     }
 
@@ -335,7 +335,7 @@ void collapse_values(struct Node *my_node) {
     my_node->visits = visit_sum;
 
     //Update Eval
-    if (my_node->height % 2 == 0) {
+    if (root->board.white_moves == my_node->board.white_moves) {
         //It is my move!
         my_node->eval = max_eval;
     }

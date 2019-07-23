@@ -484,10 +484,28 @@ def basic_eval_end_king_tables():
 
         print('{0:.2f}'.format(value), end=',')
 
-    
-
-
 def table_translate_lsb_index_my_index():
     for y in range(8):
         for x in range(7, -1, -1):
             print('{},'.format(8*y + x), end='')
+
+def eval_to_cp(win_percent):
+    if (win_percent > 0.5):
+        cp = round(math.sqrt((20000*win_percent - 10000)/(1 - win_percent)))
+    elif (win_percent < 0.5):
+        temp_eval = 1 - win_percent
+        cp = round(math.sqrt((20000*temp_eval - 10000)/(1 - temp_eval)))
+    else:
+        cp = 0
+
+    return cp
+
+def cp_to_eval(cp):
+    if (cp > 0):
+        win_percent = (cp**2 + 10000)/(cp**2 + 20000)
+    elif (cp < 0):
+        win_percent = 1 - (cp**2 + 10000)/(cp**2 + 20000)
+    else:
+        win_percent = 0.5
+
+    return win_percent
