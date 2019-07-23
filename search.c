@@ -116,7 +116,7 @@ void sort_child_nodes_by_visits(struct Node **children, size_t child_count, stru
 
 }
 
-void print_multipv(struct Node *r_node, uint64_t curr_time, uint64_t start_time) {
+void print_multipv(struct Node *r_node, uint64_t curr_time, uint64_t last_print_time, uint64_t start_time, int last_visit_count) {
     struct Node *sorted_nodes[r_node->child_count];
     struct Option **option_itr;
     char pv[MAX_BUF_SIZE];
@@ -134,7 +134,7 @@ void print_multipv(struct Node *r_node, uint64_t curr_time, uint64_t start_time)
     for (i = 0; i < multipv && i < r_node->child_count; i++, pv[0] = 0) {
         strcat(pv, sorted_nodes[i]->last_move);
         get_pv(sorted_nodes[i], pv, MAX_BUF_SIZE);
-        printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", sorted_nodes[i]->depth, sorted_nodes[i]->depth, i+1, eval_to_cp(sorted_nodes[i]->eval), sorted_nodes[i]->visits, (int)(r_node->visits / (double)((double)(1+curr_time-start_time)/1000000000L)), 0, (curr_time-start_time)/(1000000L), pv);
+        printf("info depth %d seldepth %d multipv %d score cp %d nodes %d nps %d tbhits %d time %d pv %s\n", sorted_nodes[i]->depth, sorted_nodes[i]->depth, i+1, eval_to_cp(sorted_nodes[i]->eval), sorted_nodes[i]->visits, (int)((r_node->visits - last_visit_count) / (double)((double)(1+curr_time-last_print_time)/1000000000L)), 0, (curr_time-start_time)/(1000000L), pv);
         fflush(stdout);
     }
 
@@ -150,7 +150,7 @@ void *go_worker(void *argument) {
     uint64_t search_time_nanos, last_print_time = start_time;
     //Seed with random number, diff for each thread
     uint64_t prng_state = (start_time*(args.index+1))^(0x8c248aedad57084dULL);
-    int eval_display, is_lock_acquired, recursion = 2;
+    int eval_display, is_lock_acquired, recursion = 2, last_visit_count = root->visits;
     char pv[MAX_BUF_SIZE];
     char **tokens;
     double temp_eval;
@@ -244,15 +244,17 @@ void *go_worker(void *argument) {
             //Print out depth information if new depth is reached
             curr_time = get_nanos();
             if (curr_time > last_print_time + 2000000000L) {
+                print_multipv(root, curr_time, last_print_time, start_time, last_visit_count);
                 last_print_time = curr_time;
-                print_multipv(root, curr_time, start_time);
+                last_visit_count = root->visits;
             }
         }
     }
 
     //Manager thread prints information back to GUI
     if (args.index == 0) {
-        print_multipv(root, curr_time, start_time);
+        curr_time = get_nanos();
+        print_multipv(root, curr_time, last_print_time, start_time, last_visit_count);
         get_pv(root, pv, sizeof(pv));
         tokens = m_tokenize_input(pv, strlen(pv));
         if (args.ponder_enabled) {
