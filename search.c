@@ -206,25 +206,35 @@ void *go_worker(void *argument) {
             //Start search from root
             my_node = root;
 
-            //Keep searching until our node has no children
-            while (my_node->child_count > 0) {
+            //Keep searching until we lock a leaf or hit a dead end
+            while (my_node->child_count > 0 && !my_node->is_checkmate && !my_node->is_stalemate && !is_lock_acquired) {
                 //Navigate to a worthy child by considering variables:
                 //1) Total nodes visited
                 //2) Each child eval
                 //3) Each child visits
+                //4) Number of threads processing branch
                 my_node = select_child_nav(my_node, &prng_state);
-            }
-            //Lock the leaf node
-            pthread_mutex_lock(&(my_node->mutex));
+                my_node->proc_threads += 1;
 
-            //If we have no children now, then we can stop searching
-            if (!my_node->children && !my_node->is_checkmate) {
-                is_lock_acquired = 1;
+                if (my_node->child_count == 0) {
+                    //Lock the leaf node
+                    pthread_mutex_lock(&(my_node->mutex));
+                }
+
+                //If we have no children now, then we can stop searching
+                if (my_node->child_count == 0 && !my_node->is_checkmate && !my_node->is_stalemate) {
+                    is_lock_acquired = 1;
+                }
+                else {
+                    //Someone got to our leaf node first.  Search deeper.
+                    //Release lock
+                    pthread_mutex_unlock(&(my_node->mutex));
+                }
             }
-            else {
-                //Someone got to our leaf node first.  Restart search.
-                //Release lock
-                pthread_mutex_unlock(&(my_node->mutex));
+
+            //We hit a dead end
+            if (!is_lock_acquired) {
+                deproc_nodes(my_node);
             }
         }
 
@@ -234,6 +244,7 @@ void *go_worker(void *argument) {
 
             //Push the new nodes' values from the parents all the way to root
             collapse_values(my_node);
+            deproc_nodes(my_node);
 
             //Release lock
             pthread_mutex_unlock(&(my_node->mutex));
@@ -307,6 +318,17 @@ struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
 
     //No child was found so far.  Therefore we send the last child!
     return parent->children[parent->child_count - 1];
+}
+
+void deproc_nodes(struct Node *my_node) {
+
+    if (my_node == root) {
+        return;
+    }
+
+    my_node->proc_threads -= 1;
+    deproc_nodes(my_node->parent);
+    return;
 }
 
 void collapse_values(struct Node *my_node) {
