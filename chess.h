@@ -142,7 +142,7 @@ int get_pv(struct Node *r_node, char *buffer, size_t buf_size);
 void sort_child_nodes_by_visits(struct Node **children, size_t child_count, struct Node **sorted_nodes, size_t sorted_nodes_size);
 void print_multipv(struct Node *r_node, uint64_t curr_time, uint64_t last_print_time, uint64_t start_time, int last_visit_count);
 void *go_worker(void *argument);
-struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state);
+struct Node *select_child_nav(struct Node *parent);
 void deproc_nodes(struct Node *my_node);
 void collapse_values(struct Node *my_node);
 void set_root_node(int ponder);

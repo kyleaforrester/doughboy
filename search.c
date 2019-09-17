@@ -180,7 +180,14 @@ void *go_worker(void *argument) {
         if (args.movetime) {
             search_time_nanos = args.movetime * 1000000L;
         }
-            
+
+        if (root->child_count == 0) {
+            //Initialize root tree
+            m_bloom_node(root, recursion);
+
+            //Push the new nodes' values from the parents all the way to root
+            collapse_values(root);
+        }
     }
 
     //Every thread keeps searching while pondering is on
@@ -213,7 +220,7 @@ void *go_worker(void *argument) {
                 //2) Each child eval
                 //3) Each child visits
                 //4) Number of threads processing branch
-                my_node = select_child_nav(my_node, &prng_state);
+                my_node = select_child_nav(my_node);
                 my_node->proc_threads += 1;
 
                 if (my_node->child_count == 0) {
@@ -280,44 +287,34 @@ void *go_worker(void *argument) {
     fflush(stdout);
 }
 
-struct Node *select_child_nav(struct Node *parent, uint64_t *prng_state) {
-    double soft_max_sum = 0, iteration_chance;
+struct Node *select_child_nav(struct Node *parent) {
     struct Node *child_iter;
-    double soft_max_scores[MAX_CHILDREN];
-    int i, child_found = 0, my_move;
+    double mcts_scores[MAX_CHILDREN], max = 0;
+    int i, my_move, max_index = 0;
 
     my_move = 1 - parent->height % 2;
     //Calculate softmax for each child and store sum
     for (i = 0; i < parent->child_count; i++) {
         child_iter = parent->children[i];
-        //soft_max_scores[i] = pow(59049, child_iter->eval) * log(parent->visits + 2)/log(child_iter->visits + 2);
         //It is my move!
         if (my_move) {
-            //soft_max_scores[i] = child_iter->eval + sqrt(log(parent->visits) / child_iter->visits);
-            soft_max_scores[i] = child_iter->eval;
+            mcts_scores[i] = child_iter->eval + sqrt(log(parent->visits) / (child_iter->visits + 50 * child_iter->proc_threads));
         }
         else {
             //Opponent's move!
-            //soft_max_scores[i] = (1 - child_iter->eval) + sqrt(log(parent->visits) / child_iter->visits);
-            soft_max_scores[i] = 1 - child_iter->eval;
+            mcts_scores[i] = (1 - child_iter->eval) + sqrt(log(parent->visits) / (child_iter->visits + 50 * child_iter->proc_threads));
         }
-        //soft_max_scores[i] *= soft_max_scores[i];
-        soft_max_scores[i] = pow(2, 20*soft_max_scores[i]);
-        soft_max_sum += soft_max_scores[i];
     }
 
-    //Iterate through moves until a child's percentage is hit
-    iteration_chance = 1;
-    for (i = 0; i < parent->child_count - 1; i++) {
-        if ((double)spcg32(prng_state) / (double)4294967295 <= soft_max_scores[i] / (soft_max_sum * iteration_chance)) {
-            //Child found!
-            return parent->children[i];
+    //Iterate through the mcts scores and select the highest score
+    for (i = 0; i < parent->child_count; i++) {
+        if (mcts_scores[i] > max) {
+            max = mcts_scores[i];
+            max_index = i;
         }
-        iteration_chance *= 1 - (soft_max_scores[i] / (soft_max_sum * iteration_chance));
     }
 
-    //No child was found so far.  Therefore we send the last child!
-    return parent->children[parent->child_count - 1];
+    return parent->children[max_index];
 }
 
 void deproc_nodes(struct Node *my_node) {

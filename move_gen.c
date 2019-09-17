@@ -925,6 +925,7 @@ struct Node *m_spawn_child(struct Node *node) {
     new_node->children = NULL;
     new_node->child_count = 0;
     new_node->parent = node;
+    new_node->proc_threads = 0;
     pthread_mutex_init(&(new_node->mutex), NULL);
 
     return new_node;
