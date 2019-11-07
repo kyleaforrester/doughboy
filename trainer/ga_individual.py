@@ -40,9 +40,9 @@ class Individual:
             self.weights_layers = weights_layers
 
         if biases_layers is None:
-            self.biases_layers = [16, 16, 16, 16, 1]
+            self.biases_layers = [[16], [16], [16], [16], [1]]
             #Fully connected layer has 4 extra nodes for castling rights
-            self.biases_layers += [68, 1]
+            self.biases_layers += [[68], [1]]
         else:
             self.biases_layers = biases_layers
 
@@ -59,7 +59,7 @@ class Individual:
             #Initialize biases
             #Convolutional biases
             #FC biases
-            self.biases = [[random.gauss(0, 0.05) for a in range(dim)] for dim in self.biases_layers]
+            self.biases = [[random.gauss(0, 0.05) for a in range(dim[0])] for dim in self.biases_layers]
         else:
             self.biases = biases
 
@@ -110,10 +110,13 @@ class Individual:
         Individual.curr_positions = [(pos[0], pos[3]) for pos in Individual.curr_positions]
         del positions
 
-        with mp.Pool() as pool:
-            evals = pool.map(gi.Individual.evaluate, ind_list)
-            for i in range(len(ind_list)):
-                ind_list[i].evaluation = evals[i]
+        #with mp.Pool() as pool:
+        #    evals = pool.map(Individual.evaluate, ind_list)
+        #    for i in range(len(ind_list)):
+        #        ind_list[i].evaluation = evals[i]
+        #Replace the below code when ready for multiprocessing
+        for ind in ind_list:
+            ind.evaluation = Individual.evaluate(ind)
 
         fd_out.write('Iteration {} Mutation standard deviation: {}\n'.format(layer_idx, Individual.mutate_std_dev))
         for ind in ind_list:
