@@ -1,4 +1,4 @@
-
+#include "chess.h"
 //This flips the board and the colors of all the pieces
 //Since white always moves first in our NN
 void flip_board(struct Board *board) {
@@ -89,7 +89,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
 
     int *layer, i, j;
     //New image dimensions
-    int n_i_depth, n_i_width, n_i_height, filter_size;
+    int n_i_depth, n_i_width, n_i_height, filter_size, image_size;
     int w, h, d, d2;
     int bias_idx = 0, ss_idx;
     double *filter = weights_conv, activation, power;
@@ -113,7 +113,6 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
         n_i_depth = layer[3];
 
         filter_size = 9 * layer[2];
-        counter = 0;
         for (d = 0; d < n_i_depth; d++) {
             for (h = 0; h < n_i_height; h++) {
                 for (w = 0; w < n_i_width; w++) {
@@ -127,7 +126,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*(h-1) + w-1];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                         //South
@@ -135,7 +134,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*(h-1) + w];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                         //Southeast
@@ -143,7 +142,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*(h-1) + w+1];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                         //West
@@ -151,7 +150,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*h + w-1];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                         //Center
@@ -162,7 +161,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*h + w+1];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                         //Northwest
@@ -170,7 +169,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*(h+1) + w-1];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                         //North
@@ -178,7 +177,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*(h+1) + w];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                         //Northeast
@@ -186,7 +185,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
                             snapshot[ss_idx] = image[64*d2 + 8*(h+1) + w+1];
                         }
                         else {
-                            snapshot[ss_idx] = 0
+                            snapshot[ss_idx] = 0;
                         }
                         ss_idx++;
                     }

@@ -1,4 +1,4 @@
-
+#include "chess.h"
 //Taken from KnR Second Edition Section 7.7
 char *knr_fgets(char *s, int n, FILE *iop) {
     register int c;

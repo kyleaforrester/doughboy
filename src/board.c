@@ -1,4 +1,4 @@
-
+#include "chess.h"
 void clear_bitboards(struct Board *board, uint64_t bb_clear) {
     int i;
     for (i = 0; i < 12; i++) {

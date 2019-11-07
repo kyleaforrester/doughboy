@@ -9,7 +9,7 @@ import multiprocessing as mp
 import copy
 import datetime
 import math
-import c_nn
+import py_nn
 
 class Individual:
 
@@ -23,9 +23,9 @@ class Individual:
     #All other neurons use RELU activation except the output neuron
     #There are 5 conv layers and 2 fc layers, for 7 total.
     #Each layer gets its own index in the layers and mutation_rate lists
-    mutate_rates = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+    mutate_rates = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
     conv_layers = 5
-    sample_size = 1000
+    sample_size = 128
     curr_positions = []
 
     def __init__(self, weights_layers=None, biases_layers=None, weights=None, biases=None, evaluation = 0):
@@ -33,16 +33,16 @@ class Individual:
         self.conv_layers = Individual.conv_layers
 
         if weights_layers is None:
-            self.weights_layers = [[3, 3, 12, 16], [3, 3, 16, 16]*3, [3, 3, 16, 1]]
+            self.weights_layers = [[3, 3, 12, 16], [3, 3, 16, 16], [3, 3, 16, 16], [3, 3, 16, 16], [3, 3, 16, 1]]
             #Fully connected layer has 4 extra nodes for castling rights
             self.weights_layers += [[68, 68], [68, 1]]
         else:
             self.weights_layers = weights_layers
 
         if biases_layers is None:
-            self.biases_layers = [[16], [16], [16], [16], [1]]
+            self.biases_layers = [16, 16, 16, 16, 1]
             #Fully connected layer has 4 extra nodes for castling rights
-            self.biases_layers += [[68], [1]]
+            self.biases_layers += [68, 1]
         else:
             self.biases_layers = biases_layers
 
@@ -59,7 +59,7 @@ class Individual:
             #Initialize biases
             #Convolutional biases
             #FC biases
-            self.biases += [[random.gauss(0, 0.05) for a in range(dim)] for dim in self.biases_layers]
+            self.biases = [[random.gauss(0, 0.05) for a in range(dim)] for dim in self.biases_layers]
         else:
             self.biases = biases
 
@@ -91,15 +91,15 @@ class Individual:
                 self.biases[i][a] += random.gauss(0, mutate_rate)
 
     def evaluate(ind):
-        c_nn.setup_py_objects(ind.weights_layers[:ind.conv_layers], ind.weights_layers[ind.conv_layers:], ind.biases_layers[:ind.conv_layers], ind.biases_layers[ind.conv_layers:], ind.weights[:ind.conv_layers], ind.weights[ind.conv_layers:], ind.biases[:ind.conv_layers], ind.biases[ind.conv_layers:])
+        py_nn.setup_py_objects(ind.weights_layers[:ind.conv_layers], ind.weights_layers[ind.conv_layers:], ind.biases_layers[:ind.conv_layers], ind.biases_layers[ind.conv_layers:], ind.weights[:ind.conv_layers], ind.weights[ind.conv_layers:], ind.biases[:ind.conv_layers], ind.biases[ind.conv_layers:])
         error = 0
         for pos in Individual.curr_positions:
-            ind_eval = c_nn.py_fire(pos[0])
+            ind_eval = py_nn.py_fire(pos[0])
             error += abs(ind_eval - float(pos[1]))**2
-        c_nn.close_py_objects()
+        py_nn.close_py_objects()
         return error
 
-    def play(ind_list, i):
+    def play(ind_list, layer_idx):
         now = datetime.datetime.now()
         fd_out = open('games/{}_{}_{}_{}_{}_{}.txt'.format(now.year, now.month, now.day, now.hour, now.minute, now.second), 'w')
 
@@ -115,7 +115,7 @@ class Individual:
             for i in range(len(ind_list)):
                 ind_list[i].evaluation = evals[i]
 
-        fd_out.write('Iteration {} Mutation standard deviation: {}\n'.format(i, Individual.mutate_std_dev))
+        fd_out.write('Iteration {} Mutation standard deviation: {}\n'.format(layer_idx, Individual.mutate_std_dev))
         for ind in ind_list:
             fd_out.write('Total Error: {}\n'.format(ind.evaluation))
         fd_out.write('Best Error: {}'.format(min(ind_list, key=lambda x: x.evaluation).evaluation))

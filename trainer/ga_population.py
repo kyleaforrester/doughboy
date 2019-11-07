@@ -8,7 +8,7 @@ import math
 class Population:
 
     elite_percent = 0.01
-    pop_size = 10
+    pop_size = 4
 
     def __init__(self):
         self.population = []
@@ -17,7 +17,7 @@ class Population:
         self.population = []
         for i in range(Population.pop_size):
             self.population.append(gi.Individual())
-        gi.Individual.play(self.population)
+        gi.Individual.play(self.population, 0)
 
     def write_population(self, fd):
         for ind in self.population:
