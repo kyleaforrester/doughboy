@@ -17,7 +17,7 @@ static double *biases_conv;
 static double *biases_fc;
 
 static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
-    int *layer, i, length, product, counter;
+    int **layer_iter, i, length, product, counter;
     Py_ssize_t i0, i1, i2, i3, i4, n0, n1, n2, n3, n4;
     PyObject *item;
 
@@ -51,7 +51,7 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
             if (item == NULL)
                 return -1;
             weights_layers_conv[i0][i1] = PyLong_AsLong(item);
-            if (weights_layers_conv[i0][i1] = -1 && PyErr_Occurred())
+            if (weights_layers_conv[i0][i1] == -1 && PyErr_Occurred())
                 return -1;
         }
     }
@@ -73,7 +73,7 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
             if (item == NULL)
                 return -1;
             weights_layers_fc[i0][i1] = PyLong_AsLong(item);
-            if (weights_layers_fc[i0][i1] = -1 && PyErr_Occurred())
+            if (weights_layers_fc[i0][i1] == -1 && PyErr_Occurred())
                 return -1;
         }
     }
@@ -95,7 +95,7 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
             if (item == NULL)
                 return -1;
             biases_layers_conv[i0][i1] = PyLong_AsLong(item);
-            if (biases_layers_conv[i0][i1] = -1 && PyErr_Occurred())
+            if (biases_layers_conv[i0][i1] == -1 && PyErr_Occurred())
                 return -1;
         }
     }
@@ -117,7 +117,7 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
             if (item == NULL)
                 return -1;
             biases_layers_fc[i0][i1] = PyLong_AsLong(item);
-            if (biases_layers_fc[i0][i1] = -1 && PyErr_Occurred())
+            if (biases_layers_fc[i0][i1] == -1 && PyErr_Occurred())
                 return -1;
         }
     }
@@ -129,10 +129,10 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
         return -1;
     //Find the length of the weights_conv array
     length = 0;
-    for (layer = *weights_layers_conv; *layer; layer++) {
+    for (layer_iter = weights_layers_conv; *layer_iter; layer_iter++) {
         product = 1;
         for (i = 0; i < 4; i++) {
-            product *= layer[i];
+            product *= (*layer_iter)[i];
         }
         length += product;
     }
@@ -178,10 +178,10 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
         return -1;
     //Find the length of the weights_fc array
     length = 0;
-    for (layer = *weights_layers_fc; *layer; layer++) {
+    for (layer_iter = weights_layers_fc; *layer_iter; layer_iter++) {
         product = 1;
         for (i = 0; i < 2; i++) {
-            product *= layer[i];
+            product *= (*layer_iter)[i];
         }
         length += product;
     }
@@ -215,10 +215,10 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
         return -1;
     //Find the length of the array
     length = 0;
-    for (layer = *biases_layers_conv; *layer; layer++) {
+    for (layer_iter = biases_layers_conv; *layer_iter; layer_iter++) {
         product = 1;
         for (i = 0; i < 1; i++) {
-            product *= layer[i];
+            product *= (*layer_iter)[i];
         }
         length += product;
     }
@@ -246,10 +246,10 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
         return -1;
     //Find the length of the array
     length = 0;
-    for (layer = *biases_layers_fc; *layer; layer++) {
+    for (layer_iter = biases_layers_fc; *layer_iter; layer_iter++) {
         product = 1;
         for (i = 0; i < 1; i++) {
-            product *= layer[i];
+            product *= (*layer_iter)[i];
         }
         length += product;
     }
@@ -277,26 +277,26 @@ static PyObject *setup_py_objects(PyObject *self, PyObject *args) {
 }
 
 static PyObject *close_py_objects(PyObject *self, PyObject *args) {
-    int *layer;
+    int **layer_iter;
 
     //Now free the layers metadata
-    for (layer = *weights_layers_conv; *layer; layer++) {
-        free(layer);
+    for (layer_iter = weights_layers_conv; *layer_iter; layer_iter++) {
+        free(*layer_iter);
     }
     free(weights_layers_conv);
 
-    for (layer = *weights_layers_fc; *layer; layer++) {
-        free(layer);
+    for (layer_iter = weights_layers_fc; *layer_iter; layer_iter++) {
+        free(*layer_iter);
     }
     free(weights_layers_fc);
 
-    for (layer = *biases_layers_conv; *layer; layer++) {
-        free(layer);
+    for (layer_iter = biases_layers_conv; *layer_iter; layer_iter++) {
+        free(*layer_iter);
     }
     free(biases_layers_conv);
 
-    for (layer = *biases_layers_fc; *layer; layer++) {
-        free(layer);
+    for (layer_iter = biases_layers_fc; *layer_iter; layer_iter++) {
+        free(*layer_iter);
     }
     free(biases_layers_fc);
 

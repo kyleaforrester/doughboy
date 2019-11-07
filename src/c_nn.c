@@ -87,9 +87,9 @@ double fen_fire(char *fen, int **weights_layers_conv, int **weights_layers_fc, i
 
 double fire(struct Board board, int **weights_layers_conv, int **weights_layers_fc, int **biases_layers_conv, int **biases_layers_fc, double *weights_conv, double *weights_fc, double *biases_conv, double *biases_fc) {
 
-    int *layer, i, j;
+    int **layer_iter, i, j;
     //New image dimensions
-    int n_i_depth, n_i_width, n_i_height, filter_size, image_size;
+    int n_i_depth, n_i_width, n_i_height, p_i_depth, filter_size, image_size;
     int w, h, d, d2;
     int bias_idx = 0, ss_idx;
     double *filter = weights_conv, activation, power;
@@ -109,10 +109,13 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
     board_to_image(board, image);
 
     //Execute the Convolution layers first
-    for (layer = *weights_layers_conv; *layer; layer++) {
-        n_i_depth = layer[3];
+    for (layer_iter = weights_layers_conv; *layer_iter; layer_iter++) {
+        //new image depth
+        n_i_depth = (*layer_iter)[3];
+        //previous image depth
+        p_i_depth = (*layer_iter)[2];
 
-        filter_size = 9 * layer[2];
+        filter_size = 9 * p_i_depth;
         for (d = 0; d < n_i_depth; d++) {
             for (h = 0; h < n_i_height; h++) {
                 for (w = 0; w < n_i_width; w++) {
@@ -120,7 +123,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
 
                     //Populate the previous image's filter snapshot
                     ss_idx = 0;
-                    for (d2 = 0; d2 < layer[2]; d2++) {
+                    for (d2 = 0; d2 < p_i_depth; d2++) {
                         //Southwest
                         if (w > 0 && h > 0) {
                             snapshot[ss_idx] = image[64*d2 + 8*(h-1) + w-1];
@@ -224,29 +227,33 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
 
     bias_idx = 0;
     filter = weights_fc;
-    for (layer = *weights_layers_fc; *layer; layer++) {
+    for (layer_iter = weights_layers_fc; *layer_iter; layer_iter++) {
+        //New layer length
+        n_i_depth = (*layer_iter)[1];
+        //Prev layer length
+        p_i_depth = (*layer_iter)[0];
 
-        for (i = 0; i < layer[1]; i++) {
+        for (i = 0; i < n_i_depth; i++) {
             activation = biases_fc[bias_idx];
-            for (j = 0; j < layer[0]; j++) {
+            for (j = 0; j < p_i_depth; j++) {
                 activation += image[j]*filter[j];
             }
 
             //Implement ReLU
             //But not for the last layer
-            if (activation < 0 && *(layer + 1)) {
+            if (activation < 0 && *(layer_iter + 1)) {
                 activation = 0;
             }
 
             new_image[i] = activation;
 
-            filter += layer[0];
+            filter += p_i_depth;
             bias_idx++;
         }
 
         //This FC layer is now complete
         //Update the image
-        for (i = 0; i < layer[1]; i++) {
+        for (i = 0; i < n_i_depth; i++) {
             image[i] = new_image[i];
         }
 
