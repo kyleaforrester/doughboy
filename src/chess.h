@@ -160,6 +160,7 @@ int bit_count(uint64_t bb);
 uint32_t spcg32(uint64_t s[1]);
 uint64_t get_nanos();
 int eval_to_cp(double win_percent);
+uint64_t reverse_bits(uint64_t orig);
 
 //basic_eval.c
 double evaluate(struct Board board, int recursion);
@@ -170,3 +171,10 @@ double evaluate_rooks(struct Board board, int color);
 double evaluate_queens(struct Board board, int color);
 double mobility_score(struct Board board, int color);
 
+//c_nn.c
+void flip_board(struct Board *board);
+void board_to_image(struct Board board, double *image);
+double evaluate(struct Board board, int recursion);
+double fen_fire(char *fen, int **weights_layers_conv, int **weights_layers_fc, int **biases_layers_conv, int **biases_layers_fc, double *weights_conv, double *weights_fc, double *biases_conv, double *biases_fc);
+double fire(struct Board board, int **weights_layers_conv, int **weights_layers_fc, int **biases_layers_conv, int **biases_layers_fc, double *weights_conv, double *weights_fc, double *biases_conv, double *biases_fc);
+double mat_mult(double *a, double *b, size_t size);

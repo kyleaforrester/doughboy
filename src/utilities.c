@@ -156,3 +156,19 @@ int eval_to_cp(double win_percent) {
         return 0;
     }
 }
+
+//Reverses the bits of an unsigned integer
+uint64_t reverse_bits(uint64_t orig) {
+    int count = 63;
+    uint64_t new = 0;
+
+    while (orig) {
+        new |= orig & 1;
+        orig >>= 1;
+        new <<= 1;
+        count--;
+    }
+
+    new <<= count;
+    return new;
+}
