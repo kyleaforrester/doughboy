@@ -1,0 +1,2 @@
+To compile the py_nn.so file for training purposes:
+gcc -g -lm -pthread -I/usr/include/python3.5m/ -fPIC -shared py_nn.c c_nn.c utilities.c board.c -o py_nn.so
