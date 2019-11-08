@@ -23,7 +23,7 @@ class Individual:
     #All other neurons use RELU activation except the output neuron
     #There are 5 conv layers and 2 fc layers, for 7 total.
     #Each layer gets its own index in the layers and mutation_rate lists
-    mutate_rates = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+    mutation_rates = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
     conv_layers = 5
     sample_size = 128
     curr_positions = []
@@ -67,7 +67,7 @@ class Individual:
         return Individual(weights=copy.deepcopy(self.weights), weights_layers=self.weights_layers, biases_layers=self.biases_layers, biases=copy.deepcopy(self.biases))
         
     def mutate(self, i):
-        mutate_rate = Individual.mutate_rates[i]
+        mutate_rate = Individual.mutation_rates[i]
         if (i < self.conv_layers):
             #Mutate conv_layer weights and bias
             #Weights
@@ -89,6 +89,7 @@ class Individual:
             #Biases
             for a in range(len(self.biases[i])):
                 self.biases[i][a] += random.gauss(0, mutate_rate)
+        return self
 
     def evaluate(ind):
         py_nn.setup_py_objects(ind.weights_layers[:ind.conv_layers], ind.weights_layers[ind.conv_layers:], ind.biases_layers[:ind.conv_layers], ind.biases_layers[ind.conv_layers:], ind.weights[:ind.conv_layers], ind.weights[ind.conv_layers:], ind.biases[:ind.conv_layers], ind.biases[ind.conv_layers:])
@@ -118,7 +119,7 @@ class Individual:
         for ind in ind_list:
             ind.evaluation = Individual.evaluate(ind)
 
-        fd_out.write('Iteration {} Mutation standard deviation: {}\n'.format(layer_idx, Individual.mutate_std_dev))
+        fd_out.write('Iteration {} Mutation standard deviation: {}\n'.format(layer_idx, Individual.mutation_rates))
         for ind in ind_list:
             fd_out.write('Total Error: {}\n'.format(ind.evaluation))
         fd_out.write('Best Error: {}'.format(min(ind_list, key=lambda x: x.evaluation).evaluation))

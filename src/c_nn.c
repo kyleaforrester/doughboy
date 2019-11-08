@@ -89,7 +89,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
 
     int **layer_iter, i, j;
     //New image dimensions
-    int n_i_depth, n_i_width, n_i_height, p_i_depth, filter_size, image_size;
+    int n_i_depth, n_i_width = 8, n_i_height = 8, p_i_depth, filter_size, image_size;
     int w, h, d, d2;
     int bias_idx = 0, ss_idx;
     double *filter = weights_conv, activation, power;

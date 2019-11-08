@@ -8,7 +8,7 @@ import math
 class Population:
 
     elite_percent = 0.01
-    pop_size = 4
+    pop_size = 8
 
     def __init__(self):
         self.population = []
@@ -26,15 +26,15 @@ class Population:
     def read_population(self, file_name):
         self.population = []
         for line in open(file_name).readlines():
-            if (line.count('|') == 3):
+            if (line.count('|') == 4):
                 self.population.append(gi.Individual.read(line))
             else:
                 print('Not expected format!')
 
     def new_generation(self):
-        print('Piecewise tuning {} sections: '.format(len(gi.Individual.mutation_rate)), end='')
+        print('Piecewise tuning {} sections: '.format(len(gi.Individual.mutation_rates)), end='')
         for i in range(len(gi.Individual.mutation_rates)):
-            print('{} '.format(i), end='')
+            print('{} '.format(i), end='', flush=True)
             elites = sorted(self.population, key=lambda x: x.evaluation)[:math.ceil(len(self.population)*Population.elite_percent)]
             new_gen = [elite for elite in elites]
 
@@ -46,10 +46,10 @@ class Population:
             best_ind = min(self.population, key=lambda x: x.evaluation)
             if (best_ind not in elites):
                 #Found a good individual, increase mutation
-                gi.Individual.mutation_rates[i] *= 1.02
+                gi.Individual.mutation_rates[i] *= 19/18
             else:
                 #Stagnant, decrease mutation
-                gi.Individual.mutation_rates[i] *= 0.9
+                gi.Individual.mutation_rates[i] *= 9/10
         print()
 
     def execute_generations(self):
