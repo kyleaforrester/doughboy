@@ -46,10 +46,10 @@ class Population:
             best_ind = min(self.population, key=lambda x: x.evaluation)
             if (best_ind not in elites):
                 #Found a good individual, increase mutation
-                gi.Individual.mutation_rates[i] *= 19/18
+                gi.Individual.mutation_rates[i] *= gi.Individual.mutation_increase
             else:
                 #Stagnant, decrease mutation
-                gi.Individual.mutation_rates[i] *= 9/10
+                gi.Individual.mutation_rates[i] *= gi.Individual.mutation_decrease
         print()
 
     def execute_generations(self):
@@ -58,6 +58,9 @@ class Population:
         user_input = input('How many generations do you wish to produce? ')
         while (not user_input.isdigit()):
             user_input = input('Error: Non-Integer response.\nHow many generations do you wish to produce? ')
+        md = 0.9
+        gi.Individual.mutation_decrease = md
+        gi.Individual.mutation_increase = (1/md)**(1/(len(self.population)-1))
         for i in range(1, int(user_input) + 1):
             self.new_generation()
             print('Completed {} Generations'.format(i))

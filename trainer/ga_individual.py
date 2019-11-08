@@ -24,8 +24,10 @@ class Individual:
     #There are 5 conv layers and 2 fc layers, for 7 total.
     #Each layer gets its own index in the layers and mutation_rate lists
     mutation_rates = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+    mutation_increase = 1.02 #Subject to modification
+    mutation_decrease = 0.9 #Subject to modification
     conv_layers = 5
-    sample_size = 128
+    sample_size = 512
     curr_positions = []
 
     def __init__(self, weights_layers=None, biases_layers=None, weights=None, biases=None, evaluation = 0):
@@ -111,13 +113,13 @@ class Individual:
         Individual.curr_positions = [(pos[0], pos[3]) for pos in Individual.curr_positions]
         del positions
 
-        #with mp.Pool() as pool:
-        #    evals = pool.map(Individual.evaluate, ind_list)
-        #    for i in range(len(ind_list)):
-        #        ind_list[i].evaluation = evals[i]
+        with mp.Pool() as pool:
+            evals = pool.map(Individual.evaluate, ind_list)
+            for i in range(len(ind_list)):
+                ind_list[i].evaluation = evals[i]
         #Replace the below code when ready for multiprocessing
-        for ind in ind_list:
-            ind.evaluation = Individual.evaluate(ind)
+        #for ind in ind_list:
+        #    ind.evaluation = Individual.evaluate(ind)
 
         fd_out.write('Iteration {} Mutation standard deviation: {}\n'.format(layer_idx, Individual.mutation_rates))
         for ind in ind_list:
