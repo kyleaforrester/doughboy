@@ -197,7 +197,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
 
                     //Now apply ReLU activation
                     if (activation < 0) {
-                        activation = 0;
+                        activation *= -0.01;
                     }
                     new_image[64*d + 8*h + w] = activation;
                 }
@@ -242,7 +242,7 @@ double fire(struct Board board, int **weights_layers_conv, int **weights_layers_
             //Implement ReLU
             //But not for the last layer
             if (activation < 0 && *(layer_iter + 1)) {
-                activation = 0;
+                activation *= -0.01;
             }
 
             new_image[i] = activation;
